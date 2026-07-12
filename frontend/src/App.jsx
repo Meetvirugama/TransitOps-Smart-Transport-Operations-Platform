@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard';
 import Fleet from './pages/Fleet';
 import Drivers from './pages/Drivers';
 import Trips from './pages/Trips';
+import Maintenance from './pages/Maintenance';
+import FuelExpenses from './pages/FuelExpenses';
 import Header from './components/Header';
 
 // Protected Route Wrapper
@@ -77,10 +79,7 @@ function AppRoutes() {
       <Route path="/maintenance" element={
         <ProtectedRoute>
           <Layout>
-            <Placeholder
-              title="5. Maintenance Log"
-              desc="Assign vehicles to shop, review repair history, and track scheduling tasks."
-            />
+            <Maintenance />
           </Layout>
         </ProtectedRoute>
       } />
@@ -88,10 +87,7 @@ function AppRoutes() {
       <Route path="/fuel-expenses" element={
         <ProtectedRoute>
           <Layout>
-            <Placeholder 
-              title="6. Fuel & Expenses" 
-              desc="Record fuel fills, toll fees, maintenance invoices, and track operational expenditure." 
-            />
+            <FuelExpenses />
           </Layout>
         </ProtectedRoute>
       } />

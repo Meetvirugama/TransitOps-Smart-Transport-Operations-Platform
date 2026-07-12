@@ -35,11 +35,11 @@ export default function Login() {
     if (!selectedRole) return;
 
     const roleCredentials = {
-      'Admin':            { email: 'admin@transitops.in',      password: 'admin123'      },
-      'Fleet Manager':   { email: 'manager@transitops.in',    password: 'manager123'    },
-      'Dispatcher':      { email: 'dispatcher@transitops.in', password: 'dispatcher123' },
-      'Safety Officer':  { email: 'safety@transitops.in',     password: 'safety123'     },
-      'Financial Analyst':{ email: 'finance@transitops.in',   password: 'finance123'    }
+      'Admin':            { email: 'admin@transitops.in',      password: 'admin123' },
+      'Fleet Manager':    { email: 'manager@transitops.in',    password: 'admin123' },
+      'Dispatcher':       { email: 'dispatcher@transitops.in', password: 'admin123' },
+      'Safety Officer':   { email: 'safety@transitops.in',     password: 'admin123' },
+      'Financial Analyst':{ email: 'finance@transitops.in',    password: 'admin123' }
     };
 
     const creds = roleCredentials[selectedRole];

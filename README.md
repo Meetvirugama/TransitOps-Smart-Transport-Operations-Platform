@@ -670,14 +670,6 @@ Full layer-by-layer documentation is in the `/docs` folder:
 
 ---
 
-## 👨‍💻 Author
-
-**Meet Virugama**
-- GitHub: [@Meetvirugama](https://github.com/Meetvirugama)
-- Project: [TransitOps on GitHub](https://github.com/Meetvirugama/TransitOps-Smart-Transport-Operations-Platform)
-
----
-
 ## 📄 License
 
 ISC License — see backend `package.json`

@@ -1,10 +1,10 @@
 const kpiEngine = require('../kpi/kpi.engine');
 
-const getDashboardSummary = async () => {
+const getDashboardSummary = async (filters = {}) => {
   // Execute all read-only queries in parallel for high performance
   const [vehicles, trips, drivers, financials] = await Promise.all([
-    kpiEngine.getVehicleCounts(),
-    kpiEngine.getTripCounts(),
+    kpiEngine.getVehicleCounts(filters),
+    kpiEngine.getTripCounts(filters),
     kpiEngine.getDriverCounts(),
     kpiEngine.getFinancialMetrics()
   ]);
@@ -22,11 +22,32 @@ const getDashboardSummary = async () => {
     financials,
     kpis: {
       fleetUtilizationPercentage: Number(fleetUtilization.toFixed(2)),
-      vehicleAvailabilityPercentage: vehicles.total > 0 ? Number(((vehicles.available / vehicles.total) * 100).toFixed(2)) : 0
+      vehicleAvailabilityPercentage: vehicles.total > 0
+        ? Number(((vehicles.available / vehicles.total) * 100).toFixed(2))
+        : 0,
+      tripCompletionRate: trips.total > 0
+        ? Number(((trips.completed / trips.total) * 100).toFixed(2))
+        : 0
     }
   };
 };
 
-module.exports = {
-  getDashboardSummary
+const getExpiringLicenses = async (daysAhead = 30) => {
+  return kpiEngine.getExpiringLicenses(daysAhead);
 };
+
+const getExpiredLicenses = async () => {
+  return kpiEngine.getExpiredLicenses();
+};
+
+const getInsights = async () => {
+  return kpiEngine.getInsights();
+};
+
+module.exports = {
+  getDashboardSummary,
+  getExpiringLicenses,
+  getExpiredLicenses,
+  getInsights
+};
+

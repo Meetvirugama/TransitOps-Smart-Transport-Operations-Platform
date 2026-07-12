@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
+const rateLimit = require('express-rate-limit');
 const env = require('./config/env');
 const dbPool = require('./config/database');
 
@@ -23,8 +24,18 @@ const expenseRoutes = require('./modules/finance/expenses/expense.routes');
 const revenueRoutes = require('./modules/finance/revenue/revenue.routes');
 const financeRoutes = require('./modules/finance/calculator/finance.routes');
 const analyticsRoutes = require('./modules/analytics/dashboard/dashboard.routes');
+const reportsRoutes = require('./modules/analytics/exports/reports.routes');
 
 const app = express();
+
+// Rate limiting — 10 requests per 15 minutes on auth routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { success: false, message: 'Too many login attempts. Please try again after 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
 // Global Middleware
 app.use(helmet());
@@ -37,7 +48,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(loggerMiddleware);
 
 // Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/regions', regionRoutes);
 app.use('/api/vehicle-types', vtRoutes);
 app.use('/api/license-categories', lcRoutes);
@@ -53,6 +64,7 @@ app.use('/api/expenses', expenseRoutes);
 app.use('/api/revenues', revenueRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // Health Check
 app.get('/health', async (req, res) => {

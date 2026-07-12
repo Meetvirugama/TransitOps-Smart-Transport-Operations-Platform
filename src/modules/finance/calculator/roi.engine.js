@@ -7,8 +7,8 @@ const calculateROI = async (vehicleId) => {
   const vehicle = await vehicleRepo.findById(vehicleId);
   if (!vehicle) throw new Error('Vehicle not found');
   
-  // We assume there might be a purchase_price on vehicle. If not, default to 50000 for calculation demonstration if undefined
-  const acquisitionCost = vehicle.purchase_price ? Number(vehicle.purchase_price) : 50000; 
+  // We use acquisition_cost (the correct DB column on the vehicles table)
+  const acquisitionCost = vehicle.acquisition_cost ? Number(vehicle.acquisition_cost) : 0;
 
   // 2. Get Revenue
   const revenueQuery = `SELECT COALESCE(SUM(amount), 0) as total_revenue FROM revenues WHERE vehicle_id = $1 AND is_deleted = false`;

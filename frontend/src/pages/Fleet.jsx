@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../config/api';
 import Modal from '../components/Modal';
+import { useAuth } from '../context/AuthContext';
 
 export default function Fleet() {
   const [vehicles, setVehicles] = useState([]);
@@ -8,6 +9,9 @@ export default function Fleet() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [vehicleTypesList, setVehicleTypesList] = useState([]);
+  const { user } = useAuth();
+  
+  const canModify = user?.role === 'Admin' || user?.role === 'Fleet Manager';
 
   const fetchVehicles = async () => {
     try {
@@ -184,12 +188,14 @@ export default function Fleet() {
           />
         </div>
 
-        <button 
-          onClick={handleOpenAddModal}
-          className="bg-[#4ff7d1] hover:bg-[#3ee0be] text-[#0d1318] border-none px-4 py-2.5 rounded-full text-sm font-semibold cursor-pointer transition-all-custom hover:scale-[1.02]"
-        >
-          + Add Vehicle
-        </button>
+        {canModify && (
+          <button 
+            onClick={handleOpenAddModal}
+            className="bg-[#4ff7d1] hover:bg-[#3ee0be] text-[#0d1318] border-none px-4 py-2.5 rounded-full text-sm font-semibold cursor-pointer transition-all-custom hover:scale-[1.02]"
+          >
+            + Add Vehicle
+          </button>
+        )}
       </div>
 
       {/* Vehicles Registry — Glassmorphic card rows */}
@@ -197,7 +203,7 @@ export default function Fleet() {
         {/* Header row — must match data row grid exactly */}
         <div
           className="grid items-center px-5 pb-2.5 border-b border-dark-border font-mono text-[10px] text-[#86898c] uppercase font-bold tracking-widest"
-          style={{ gridTemplateColumns: '1.5fr 1.4fr 0.65fr 0.75fr 1fr 1fr 1fr 160px', gap: '1rem' }}
+          style={{ gridTemplateColumns: `1.5fr 1.4fr 0.65fr 0.75fr 1fr 1fr 1fr ${canModify ? '160px' : ''}`, gap: '1rem' }}
         >
           <span>Reg. No.</span>
           <span>Name / Model</span>
@@ -206,7 +212,7 @@ export default function Fleet() {
           <span>Odometer</span>
           <span>Acq. Cost</span>
           <span>Status</span>
-          <span>Actions</span>
+          {canModify && <span>Actions</span>}
         </div>
 
         {filteredVehicles.length === 0 ? (
@@ -224,7 +230,7 @@ export default function Fleet() {
               <div
                 key={v.id || v.registration_number}
                 className={`glass-table-row grid items-center px-5 py-4 rounded-xl border bg-[#121b1f]/80 backdrop-blur-sm transition-all duration-300 hover:bg-[#162129]/90 hover:shadow-[0_0_18px_rgba(79,247,209,0.06)] ${glowBorder}`}
-                style={{ gridTemplateColumns: '1.5fr 1.4fr 0.65fr 0.75fr 1fr 1fr 1fr 160px', gap: '1rem', animationDelay: `${idx * 40}ms` }}
+                style={{ gridTemplateColumns: `1.5fr 1.4fr 0.65fr 0.75fr 1fr 1fr 1fr ${canModify ? '160px' : ''}`, gap: '1rem', animationDelay: `${idx * 40}ms` }}
               >
                 <span className="font-mono font-bold text-[#ffffff] text-xs tracking-wide">{v.registration_number}</span>
                 <span className="text-[#c5cace] text-xs">{v.name}</span>
@@ -235,20 +241,22 @@ export default function Fleet() {
                 <span className={`inline-flex w-fit px-2.5 py-0.5 rounded-full border text-[9px] font-bold uppercase tracking-wider ${pillColor}`}>
                   {v.status}
                 </span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleOpenEditModal(v)}
-                    className="btn-edit bg-transparent border border-[#1e2d38] px-4 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all duration-200 whitespace-nowrap"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(v.id, v.registration_number)}
-                    className="btn-delete bg-transparent border border-[#1e2d38] px-4 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all duration-200 whitespace-nowrap"
-                  >
-                    Delete
-                  </button>
-                </div>
+                {canModify && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleOpenEditModal(v)}
+                      className="btn-edit bg-transparent border border-[#1e2d38] px-4 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all duration-200 whitespace-nowrap"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(v.id, v.registration_number)}
+                      className="btn-delete bg-transparent border border-[#1e2d38] px-4 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all duration-200 whitespace-nowrap"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })

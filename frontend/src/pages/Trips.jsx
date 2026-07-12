@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import api from '../config/api';
 import Modal from '../components/Modal';
+import { useAuth } from '../context/AuthContext';
 
 export default function Trips() {
   // DB States
@@ -33,6 +34,9 @@ export default function Trips() {
   const [compFuelCost, setCompFuelCost] = useState('');
   const [compExpenses, setCompExpenses] = useState('0');
   const [odoError, setOdoError] = useState('');
+  
+  const { user } = useAuth();
+  const canModify = user?.role === 'Admin' || user?.role === 'Fleet Manager' || user?.role === 'Dispatcher';
 
   // Fetch Data
   const fetchData = async () => {
@@ -264,6 +268,11 @@ export default function Trips() {
       return;
     }
 
+    if (!canModify) {
+      alert("You do not have permission to modify this trip.");
+      return;
+    }
+
     if (step === 'Cancelled') {
       handleCancelTrip(trip);
     } else if (step === 'Completed') {
@@ -325,7 +334,7 @@ export default function Trips() {
                   type="text"
                   value={source}
                   onChange={(e) => setSource(e.target.value)}
-                  disabled={selectedTripId !== null}
+                  disabled={selectedTripId !== null || !canModify}
                   className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl transition-all-custom hover-glow disabled:opacity-50"
                   placeholder="Gandhinagar Depot"
                   required
@@ -338,7 +347,7 @@ export default function Trips() {
                   type="text"
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
-                  disabled={selectedTripId !== null}
+                  disabled={selectedTripId !== null || !canModify}
                   className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl transition-all-custom hover-glow disabled:opacity-50"
                   placeholder="Ahmedabad Hub"
                   required
@@ -349,7 +358,7 @@ export default function Trips() {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <label className="font-mono text-xs text-[#b6b8ba] font-bold tracking-wider uppercase">Vehicle (Available Only)</label>
-                {selectedTripId ? (
+                {selectedTripId || !canModify ? (
                   <input
                     type="text"
                     value={selectedVehReg}
@@ -381,7 +390,7 @@ export default function Trips() {
 
               <div className="flex flex-col gap-2">
                 <label className="font-mono text-xs text-[#b6b8ba] font-bold tracking-wider uppercase">Driver (Available Only)</label>
-                {selectedTripId ? (
+                {selectedTripId || !canModify ? (
                   <input
                     type="text"
                     value={selectedDrvName}
@@ -419,7 +428,7 @@ export default function Trips() {
                   type="number"
                   value={cargoWeight}
                   onChange={(e) => setCargoWeight(e.target.value)}
-                  disabled={selectedTripId !== null}
+                  disabled={selectedTripId !== null || !canModify}
                   className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl transition-all-custom hover-glow disabled:opacity-50"
                   placeholder="700"
                   required
@@ -432,7 +441,7 @@ export default function Trips() {
                   type="number"
                   value={plannedDistance}
                   onChange={(e) => setPlannedDistance(e.target.value)}
-                  disabled={selectedTripId !== null}
+                  disabled={selectedTripId !== null || !canModify}
                   className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl transition-all-custom hover-glow disabled:opacity-50"
                   placeholder="38"
                   required
@@ -459,7 +468,7 @@ export default function Trips() {
                 >
                   Close Detail View
                 </button>
-              ) : (
+              ) : canModify ? (
                 <>
                   <button
                     type="submit"
@@ -480,7 +489,7 @@ export default function Trips() {
                     Cancel
                   </button>
                 </>
-              )}
+              ) : null}
             </div>
           </form>
         </div>

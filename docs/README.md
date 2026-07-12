@@ -56,6 +56,8 @@ The platform is organized as a **layered modular monolith**. Each layer depends 
 
 ```
 ┌─────────────────────────────────────────┐
+│  Layer 7 — AI Intelligence (Groq+Gemini)│  Operations Brief, Chatbot, Maintenance Insights.
+├─────────────────────────────────────────┤
 │  Layer 6 — Analytics & Reporting        │  Read-only. Dashboard, KPIs, CSV exports, insights.
 ├─────────────────────────────────────────┤
 │  Layer 5 — Financial Management         │  Fuel logs, expenses, revenues, ROI & efficiency engines.
@@ -288,7 +290,16 @@ Authorization: Bearer <jwt_token>
 | POST | `/auth/register` | ❌ | Register new user |
 | GET | `/auth/me` | ✅ | Get current user profile |
 
-Rate limited: 10 requests / 15 minutes per IP on `/auth`.
+---
+
+### AI Intelligence (Layer 7)
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/ai/chat` | ✅ | Chat with the fleet AI assistant |
+| `GET` | `/ai/operations-brief` | ✅ | Get Groq risk analysis + Gemini narrative |
+| `GET` | `/ai/maintenance-insights` | ✅ | Get AI maintenance recommendations |
+
+Rate limited by Groq/Gemini quotas. Includes built-in key rotation.
 
 ---
 

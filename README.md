@@ -375,7 +375,11 @@ Three calculation engines accessible via `/api/finance`:
 - Export **trips** (filter by status, date range, vehicle)
 - Export **vehicles** (filter by status, region, type)
 - Export **fuel logs** (filter by vehicle, date range)
-- Pure string-based CSV generation — no external library
+### 13. 🤖 Dual-AI Intelligence
+- **Operations Brief (Groq + Gemini)**: High-speed LLaMA 3.3 via Groq performs JSON-structured risk analysis on fleet data, which is then fed into Gemini 2.5 Flash to generate a natural language narrative and actionable dispatch items.
+- **Maintenance Insights**: Gemini analyzes vehicle maintenance history to provide targeted recommendations for vehicles needing attention.
+- **AI Chatbot**: A floating conversational assistant powered by Gemini that understands live fleet context and answers natural language questions about your operations.
+- **Key Rotation**: Built-in array-based API key rotation for Groq to gracefully handle rate limits (429s).
 
 ---
 
@@ -394,6 +398,13 @@ Authorization: Bearer <your_jwt_token>
 | `POST` | `/api/auth/login` | Login with email + password |
 | `POST` | `/api/auth/register` | Register a new user |
 | `GET` | `/api/auth/me` | Get current logged-in user |
+
+### AI Intelligence
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/ai/chat` | Chat with the fleet AI assistant |
+| `GET` | `/api/ai/operations-brief` | Get Groq risk analysis + Gemini narrative |
+| `GET` | `/api/ai/maintenance-insights` | Get AI maintenance recommendations |
 
 ### Vehicles
 | Method | Endpoint | Description |

@@ -13,6 +13,7 @@
 | 4 | Maintenance & Workshops | ✅ | ✅ Maintenance Page | ✅ |
 | 5 | Finance (Fuel/Expenses) | ✅ | ✅ Fuel & Expenses Page | ✅ |
 | 6 | Analytics & Reports | ✅ | ✅ Dashboard (KPI cards) | ✅ |
+| 7 | AI Intelligence | ✅ | ✅ Operations Brief / Chatbot | ✅ |
 
 ---
 
@@ -190,6 +191,24 @@
 
 ---
 
+## Layer 7 — AI Intelligence ✅
+
+### Backend
+- [x] Groq Integration (LLaMA 3.3) for rapid JSON risk scoring and analysis
+- [x] Gemini 2.5 Flash Integration for natural language operations brief narratives
+- [x] Gemini Maintenance Insights generating targeted recommendations
+- [x] Live Fleet Snapshot context injected into prompts for real-time accuracy
+- [x] Automatic array-based Groq API key rotation on 429 rate limit
+- [x] Robust Markdown stripping logic for UI safety
+
+### Frontend
+- [x] Floating AI Chatbot overlay widget
+- [x] Operations Intelligence Brief section on Dashboard
+- [x] Glassmorphic glowing UI for AI elements
+- [x] Automatic retry and fallback logic
+
+---
+
 ## API Summary
 
 | Module | Prefix | Key Endpoints |
@@ -211,6 +230,7 @@
 | Finance Calculators | `/api/finance` | vehicle summary, trip summary, global summary |
 | Analytics Dashboard | `/api/analytics` | dashboard, expiring-licenses, insights |
 | CSV Reports | `/api/reports` | trips.csv, vehicles.csv, fuel.csv |
+| AI Intelligence | `/api/ai` | chat, operations-brief, maintenance-insights |
 | Health | `/health` | server + DB health check |
 
 ---

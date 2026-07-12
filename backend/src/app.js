@@ -31,6 +31,9 @@ const aiRoutes = require('./modules/ai/ai.routes');
 
 const app = express();
 
+// Trust proxy for rate limiting behind Vercel/Render
+app.set('trust proxy', 1);
+
 // Rate limiting — 10 requests per 15 minutes on auth routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

@@ -108,7 +108,7 @@ export default function Dashboard() {
       api.get('/trips',         { params: { limit: 200 } }),
       api.get('/drivers',       { params: { limit: 200 } }),
       api.get('/maintenance',   { params: { limit: 200 } }),
-      api.get('/fuel-logs',     { params: { limit: 200 } }),
+      api.get('/fuel',          { params: { limit: 200 } }),
     ]).then(([veh, trp, drv, maint, fuel]) => {
       if (veh.success)   setVehicles(veh.data || []);
       if (trp.success)   setTrips(trp.data || []);

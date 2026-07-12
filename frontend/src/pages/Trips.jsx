@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import api from '../config/api';
 import Modal from '../components/Modal';
+import { useAuth } from '../context/AuthContext';
 
 export default function Trips() {
   // DB States
@@ -33,6 +34,9 @@ export default function Trips() {
   const [compFuelCost, setCompFuelCost] = useState('');
   const [compExpenses, setCompExpenses] = useState('0');
   const [odoError, setOdoError] = useState('');
+  
+  const { user } = useAuth();
+  const canModify = user?.role === 'Admin' || user?.role === 'Fleet Manager' || user?.role === 'Dispatcher';
 
   // Fetch Data
   const fetchData = async () => {
@@ -264,6 +268,11 @@ export default function Trips() {
       return;
     }
 
+    if (!canModify) {
+      alert("You do not have permission to modify this trip.");
+      return;
+    }
+
     if (step === 'Cancelled') {
       handleCancelTrip(trip);
     } else if (step === 'Completed') {
@@ -272,7 +281,7 @@ export default function Trips() {
   };
 
   return (
-    <div className="flex flex-col gap-6 select-none h-[calc(100vh-120px)]">
+    <div className="flex flex-col gap-6 select-none h-[calc(100vh-120px)] animate-page-fade">
       <div className="flex justify-between items-center shrink-0">
         <h2 className="font-heading text-2xl font-bold text-dark-text">4. Trip Dispatcher</h2>
       </div>
@@ -293,23 +302,23 @@ export default function Trips() {
                   (activeStep === 'Dispatched' && step === 'Draft') ||
                   (activeStep === 'Completed' && (step === 'Draft' || step === 'Dispatched'));
 
-                let dotColor = 'bg-dark-muted';
-                if (isActive && step === 'Draft') dotColor = 'bg-accent-green shadow-[0_0_6px_#22C55E]';
-                if (isActive && step === 'Dispatched') dotColor = 'bg-accent-blue shadow-[0_0_6px_#3B82F6]';
-                if (isActive && step === 'Completed') dotColor = 'bg-accent-green shadow-[0_0_6px_#22C55E]';
-                if (isActive && step === 'Cancelled') dotColor = 'bg-accent-red shadow-[0_0_6px_#EF4444]';
+                let dotColor = 'bg-[#283945]';
+                if (isActive && step === 'Draft') dotColor = 'bg-[#4ff7d1]';
+                if (isActive && step === 'Dispatched') dotColor = 'bg-[#c5cace]';
+                if (isActive && step === 'Completed') dotColor = 'bg-[#4ff7d1]';
+                if (isActive && step === 'Cancelled') dotColor = 'bg-[#d946ef]';
 
                 return (
                   <React.Fragment key={step}>
-                    {idx > 0 && <span className="w-6 h-[2px] bg-dark-border"></span>}
+                    {idx > 0 && <span className="w-6 h-[2px] bg-[#283945]"></span>}
                     <div 
                       onClick={() => handleStepClick(step)}
-                      className={`flex items-center gap-1.5 transition-all duration-150 ${
+                      className={`flex items-center gap-1.5 transition-all-custom ${
                         selectedTripId ? 'cursor-pointer' : 'cursor-default'
                       } ${isActive ? 'opacity-100' : 'opacity-35'}`}
                     >
-                      <span className={`w-2.5 h-2.5 rounded-full inline-block ${dotColor}`}></span>
-                      <span className="text-[10px] font-bold text-dark-text">{step}</span>
+                      <span className={`w-2.5 h-2.5 rounded-full inline-block ${dotColor} ${isActive && (step === 'Draft' || step === 'Completed') ? 'animate-signal-breathe' : ''}`}></span>
+                      <span className="text-[11px] font-bold text-dark-text">{step}</span>
                     </div>
                   </React.Fragment>
                 );
@@ -319,27 +328,27 @@ export default function Trips() {
 
           <form onSubmit={handleDispatchSubmit} className="flex flex-col gap-4 text-xs">
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="font-mono text-[9px] text-dark-muted uppercase font-bold tracking-wider">Source</label>
+              <div className="flex flex-col gap-2">
+                <label className="font-mono text-xs text-[#b6b8ba] font-bold tracking-wider uppercase">Source</label>
                 <input
                   type="text"
                   value={source}
                   onChange={(e) => setSource(e.target.value)}
-                  disabled={selectedTripId !== null}
-                  className="w-full bg-[#0B0F19] border border-dark-border rounded-md px-4 py-2.5 outline-none focus:border-brand text-dark-text disabled:opacity-50"
+                  disabled={selectedTripId !== null || !canModify}
+                  className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl transition-all-custom hover-glow disabled:opacity-50"
                   placeholder="Gandhinagar Depot"
                   required
                 />
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="font-mono text-[9px] text-dark-muted uppercase font-bold tracking-wider">Destination</label>
+              <div className="flex flex-col gap-2">
+                <label className="font-mono text-xs text-[#b6b8ba] font-bold tracking-wider uppercase">Destination</label>
                 <input
                   type="text"
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
-                  disabled={selectedTripId !== null}
-                  className="w-full bg-[#0B0F19] border border-dark-border rounded-md px-4 py-2.5 outline-none focus:border-brand text-dark-text disabled:opacity-50"
+                  disabled={selectedTripId !== null || !canModify}
+                  className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl transition-all-custom hover-glow disabled:opacity-50"
                   placeholder="Ahmedabad Hub"
                   required
                 />
@@ -347,25 +356,25 @@ export default function Trips() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="font-mono text-[9px] text-dark-muted uppercase font-bold tracking-wider">Vehicle (Available Only)</label>
-                {selectedTripId ? (
+              <div className="flex flex-col gap-2">
+                <label className="font-mono text-xs text-[#b6b8ba] font-bold tracking-wider uppercase">Vehicle (Available Only)</label>
+                {selectedTripId || !canModify ? (
                   <input
                     type="text"
                     value={selectedVehReg}
                     disabled
-                    className="w-full bg-[#0B0F19] border border-dark-border rounded-md px-4 py-2.5 outline-none text-dark-text opacity-50 font-mono"
+                    className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl opacity-50 font-mono"
                   />
                 ) : (
                   <select
                     value={selectedVehReg}
                     onChange={(e) => setSelectedVehReg(e.target.value)}
-                    className="w-full bg-[#0B0F19] border border-dark-border rounded-md px-4 py-2.5 outline-none focus:border-brand text-dark-text cursor-pointer appearance-none"
+                    className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl cursor-pointer appearance-none transition-all-custom hover-glow"
                     style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748B'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2386898c'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
                       backgroundRepeat: 'no-repeat',
                       backgroundPosition: 'right 1rem center',
-                      backgroundSize: '1.2rem'
+                      backgroundSize: '1rem'
                     }}
                     required
                   >
@@ -379,32 +388,32 @@ export default function Trips() {
                 )}
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="font-mono text-[9px] text-dark-muted uppercase font-bold tracking-wider">Driver (Available Only)</label>
-                {selectedTripId ? (
+              <div className="flex flex-col gap-2">
+                <label className="font-mono text-xs text-[#b6b8ba] font-bold tracking-wider uppercase">Driver (Available Only)</label>
+                {selectedTripId || !canModify ? (
                   <input
                     type="text"
                     value={selectedDrvName}
                     disabled
-                    className="w-full bg-[#0B0F19] border border-dark-border rounded-md px-4 py-2.5 outline-none text-dark-text opacity-50"
+                    className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl opacity-50"
                   />
                 ) : (
                   <select
                     value={selectedDrvName}
                     onChange={(e) => setSelectedDrvName(e.target.value)}
-                    className="w-full bg-[#0B0F19] border border-dark-border rounded-md px-4 py-2.5 outline-none focus:border-brand text-dark-text cursor-pointer appearance-none"
+                    className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl cursor-pointer appearance-none transition-all-custom hover-glow"
                     style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748B'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2386898c'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
                       backgroundRepeat: 'no-repeat',
                       backgroundPosition: 'right 1rem center',
-                      backgroundSize: '1.2rem'
+                      backgroundSize: '1rem'
                     }}
                     required
                   >
                     <option value="" disabled>Select driver...</option>
                     {availableDrivers.map(d => (
                       <option key={d.id} value={d.id}>
-                        {d.name} ({d.license_category ? d.license_category.name : 'Unknown'})
+                        {d.full_name} ({d.license_category_name ? d.license_category_name : 'Unknown'})
                       </option>
                     ))}
                   </select>
@@ -413,39 +422,40 @@ export default function Trips() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="font-mono text-[9px] text-dark-muted uppercase font-bold tracking-wider">Cargo Weight (KG)</label>
+              <div className="flex flex-col gap-2">
+                <label className="font-mono text-xs text-[#b6b8ba] font-bold tracking-wider uppercase">Cargo Weight (KG)</label>
                 <input
                   type="number"
                   value={cargoWeight}
                   onChange={(e) => setCargoWeight(e.target.value)}
-                  disabled={selectedTripId !== null}
-                  className="w-full bg-[#0B0F19] border border-dark-border rounded-md px-4 py-2.5 outline-none focus:border-brand text-dark-text disabled:opacity-50"
+                  disabled={selectedTripId !== null || !canModify}
+                  className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl transition-all-custom hover-glow disabled:opacity-50"
                   placeholder="700"
                   required
                 />
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="font-mono text-[9px] text-dark-muted uppercase font-bold tracking-wider">Planned Distance (KM)</label>
+              <div className="flex flex-col gap-2">
+                <label className="font-mono text-xs text-[#b6b8ba] font-bold tracking-wider uppercase">Planned Distance (KM)</label>
                 <input
                   type="number"
                   value={plannedDistance}
                   onChange={(e) => setPlannedDistance(e.target.value)}
-                  disabled={selectedTripId !== null}
-                  className="w-full bg-[#0B0F19] border border-dark-border rounded-md px-4 py-2.5 outline-none focus:border-brand text-dark-text disabled:opacity-50"
+                  disabled={selectedTripId !== null || !canModify}
+                  className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl transition-all-custom hover-glow disabled:opacity-50"
                   placeholder="38"
                   required
                 />
               </div>
             </div>
 
-            {/* Capacity Warning Alert box */}
+            {/* Capacity Warning Alert box - Re-styled to Turso warning */}
             {capacityWarning && (
-              <div className="bg-red-500/10 border border-dashed border-red-500 p-4 rounded-md flex flex-col gap-1 z-10">
-                <div className="font-semibold text-red-500">Vehicle Capacity: {capacityLimit} kg</div>
-                <div className="font-semibold text-red-500">Cargo Weight: {cargoWeight} kg</div>
-                <div className="font-bold text-red-500 mt-1">❌ Capacity exceeded by {excessWeight} kg &mdash; dispatch blocked</div>
+              <div className="bg-[#0d1318] border border-[#ef4444] p-4 rounded-xl flex flex-col gap-1 z-10 font-mono text-[11px] text-[#ef4444]">
+                <div className="font-bold">SYSTEM STATUS: EXCEEDED</div>
+                <div className="text-[#c5cace] mt-1">Vehicle Capacity Limit: {capacityLimit} kg</div>
+                <div className="text-[#c5cace]">Cargo Weight Requested: {cargoWeight} kg</div>
+                <div className="font-bold mt-1">Dispatch operation rejected by {excessWeight} kg</div>
               </div>
             )}
 
@@ -454,19 +464,19 @@ export default function Trips() {
                 <button
                   type="button"
                   onClick={handleResetForm}
-                  className="flex-1 bg-transparent border border-dark-border hover:border-dark-text hover:text-dark-text py-3 rounded-md font-semibold text-center cursor-pointer transition-all duration-150"
+                  className="flex-1 bg-transparent border border-[#283945] hover:bg-[#283945] text-[#ffffff] py-3.5 rounded-full font-bold text-sm text-center cursor-pointer transition-all duration-150"
                 >
                   Close Detail View
                 </button>
-              ) : (
+              ) : canModify ? (
                 <>
                   <button
                     type="submit"
                     disabled={capacityWarning}
-                    className={`flex-[1.5] py-3 rounded-md font-semibold text-center transition-all duration-150 cursor-pointer ${
+                    className={`flex-[1.5] py-3.5 rounded-full font-bold text-sm text-center transition-all-custom cursor-pointer ${
                       capacityWarning
-                        ? 'bg-dark-border text-dark-muted cursor-not-allowed shadow-none'
-                        : 'bg-brand hover:bg-[#924C0D] text-dark-text shadow-[0_4px_12px_rgba(178,94,19,0.35)]'
+                        ? 'bg-[#283945] text-[#9ea1a3] cursor-not-allowed'
+                        : 'bg-[#4ff7d1] hover:bg-[#3ee0be] text-[#0d1318]'
                     }`}
                   >
                     Dispatch
@@ -474,12 +484,12 @@ export default function Trips() {
                   <button
                     type="button"
                     onClick={handleResetForm}
-                    className="flex-1 bg-transparent border border-dark-border hover:border-dark-text hover:text-dark-text py-3 rounded-md font-semibold text-center cursor-pointer transition-all duration-150"
+                    className="flex-1 bg-transparent border border-[#283945] hover:bg-[#283945] text-[#ffffff] py-3.5 rounded-full font-bold text-sm text-center cursor-pointer transition-all duration-150"
                   >
                     Cancel
                   </button>
                 </>
-              )}
+              ) : null}
             </div>
           </form>
         </div>
@@ -494,20 +504,20 @@ export default function Trips() {
             ) : (
               trips.map((t) => {
                 let eta = '—';
-                let pillColor = 'bg-white/8 text-dark-muted border-white/10';
+                let pillStyle = 'bg-[#162129] text-[#9ea1a3] border-[#283945]'; // default
                 if (t.status === 'Dispatched') {
                   eta = '45 min';
-                  pillColor = 'bg-accent-blue/12 text-accent-blue border-accent-blue/25';
+                  pillStyle = 'bg-[#0e342d] text-[#4ff7d1] border-[#4ff7d1]/20';
                 }
                 if (t.status === 'Draft') {
                   eta = 'Awaiting vehicle';
-                  pillColor = 'bg-white/5 text-dark-muted border-white/10';
+                  pillStyle = 'bg-[#162129] text-[#86898c] border-[#283945]';
                 }
                 if (t.status === 'Completed') {
-                  pillColor = 'bg-accent-green/12 text-accent-green border-accent-green/25';
+                  pillStyle = 'bg-[#0e342d] text-[#4ff7d1] border-[#4ff7d1]/20';
                 }
                 if (t.status === 'Cancelled') {
-                  pillColor = 'bg-accent-red/12 text-accent-red border-accent-red/25';
+                  pillStyle = 'bg-[#0d1318] text-[#d946ef] border-[#d946ef]/20';
                 }
 
                 const isSelected = selectedTripId === t.id;
@@ -516,19 +526,19 @@ export default function Trips() {
                   <div
                     key={t.id}
                     onClick={() => handleSelectTrip(t.id)}
-                    className={`bg-dark-bg border rounded-lg p-4 cursor-pointer flex flex-col gap-2 transition-all duration-200 ${
+                    className={`bg-[#121b1f] border rounded-xl p-4 cursor-pointer flex flex-col gap-2 transition-all duration-150 ${
                       isSelected
-                        ? 'border-brand border-solid bg-brand/[0.04]'
-                        : 'border-dark-border border-dashed hover:border-brand hover:bg-brand/[0.01]'
+                        ? 'border-[#4ff7d1] bg-[#162129]'
+                        : 'border-[#283945] border-dashed hover:border-[#4ff7d1]'
                     }`}
                   >
                     <div className="flex justify-between items-center text-xs">
-                      <span className="font-mono font-bold">{t.trip_number || t.id}</span>
-                      <span className="font-medium text-dark-muted">{t.vehicle_id ? `Veh: ${t.vehicle_id} / Drv: ${t.driver_id}` : 'Unassigned'}</span>
+                      <span className="font-mono font-bold text-[#ffffff]">{t.id}</span>
+                      <span className="font-medium text-dark-muted font-mono text-[10px]">{t.registration_number ? `${t.registration_number} / ${t.driver_name}` : 'Unassigned'}</span>
                     </div>
-                    <div className="text-xs font-semibold text-dark-text leading-tight">{t.source} &rarr; {t.destination}</div>
+                    <div className="text-xs font-semibold text-[#ffffff] leading-tight">{t.source} &rarr; {t.destination}</div>
                     <div className="flex justify-between items-center pt-1 mt-0.5">
-                      <span className={`inline-flex px-2 py-0.5 rounded border text-[10px] font-semibold uppercase ${pillColor}`}>
+                      <span className={`inline-flex px-2.5 py-0.5 rounded-full border text-[9px] font-bold uppercase tracking-wider ${pillStyle}`}>
                         {t.status}
                       </span>
                       <span className="font-mono text-[10px] text-dark-muted">{eta}</span>
@@ -539,8 +549,8 @@ export default function Trips() {
             )}
           </div>
 
-          <div className="text-[10px] text-dark-muted font-medium italic text-center shrink-0 border-t border-dark-border pt-3">
-            On Complete: odometer &rarr; fuel log &rarr; expenses &rarr; Vehicle & Driver Available
+          <div className="font-mono text-[9px] text-[#86898c] mt-2 select-none uppercase tracking-wider text-center border-t border-[#283945] pt-3 shrink-0">
+            On Complete: ODOMETER &rarr; FUEL LOGS &rarr; EXPENSES &rarr; AVAILABLE
           </div>
         </div>
 
@@ -553,8 +563,8 @@ export default function Trips() {
         title="Complete Trip Metrics"
       >
         <form onSubmit={handleCompleteSubmit} className="flex flex-col gap-4 text-xs">
-          <div className="text-[11px] text-dark-muted leading-normal border-b border-dark-border pb-3 mb-1">
-            Provide actual trip details for trip <strong className="text-brand">{compTripId}</strong> to restore vehicle and driver availability.
+          <div className="text-[11px] text-dark-muted leading-normal border-b border-[#283945] pb-3 mb-1">
+            Provide actual trip details for trip <strong className="text-[#4ff7d1]">{compTripId}</strong> to restore vehicle and driver availability.
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -563,11 +573,11 @@ export default function Trips() {
               type="number"
               value={compOdometer}
               onChange={(e) => setCompOdometer(e.target.value)}
-              className="w-full bg-[#0B0F19] border border-dark-border rounded-md px-4 py-2.5 outline-none focus:border-brand text-dark-text"
+              className="w-full bg-[#121b1f] border border-[#283945] text-[#ffffff]"
               placeholder="74500"
               required
             />
-            {odoError && <span className="text-[10px] text-accent-red mt-1">{odoError}</span>}
+            {odoError && <span className="text-[10px] text-[#d946ef] mt-1">{odoError}</span>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -577,7 +587,7 @@ export default function Trips() {
                 type="number"
                 value={compFuelLiters}
                 onChange={(e) => setCompFuelLiters(e.target.value)}
-                className="w-full bg-[#0B0F19] border border-dark-border rounded-md px-4 py-2.5 outline-none focus:border-brand text-dark-text"
+                className="w-full bg-[#121b1f] border border-[#283945] text-[#ffffff]"
                 placeholder="30"
                 required
               />
@@ -588,7 +598,7 @@ export default function Trips() {
                 type="number"
                 value={compFuelCost}
                 onChange={(e) => setCompFuelCost(e.target.value)}
-                className="w-full bg-[#0B0F19] border border-dark-border rounded-md px-4 py-2.5 outline-none focus:border-brand text-dark-text"
+                className="w-full bg-[#121b1f] border border-[#283945] text-[#ffffff]"
                 placeholder="60"
                 required
               />
@@ -601,7 +611,7 @@ export default function Trips() {
               type="number"
               value={compExpenses}
               onChange={(e) => setCompExpenses(e.target.value)}
-              className="w-full bg-[#0B0F19] border border-dark-border rounded-md px-4 py-2.5 outline-none focus:border-brand text-dark-text"
+              className="w-full bg-[#121b1f] border border-[#283945] text-[#ffffff]"
               placeholder="15"
               required
             />
@@ -609,7 +619,7 @@ export default function Trips() {
 
           <button 
             type="submit" 
-            className="w-full bg-brand hover:bg-[#924C0D] text-dark-text py-3 rounded-md font-semibold text-center mt-3 cursor-pointer shadow-[0_4px_12px_rgba(178,94,19,0.35)] transition-all duration-150"
+            className="w-full bg-[#4ff7d1] hover:bg-[#3ee0be] text-[#0d1318] py-3 rounded-full font-bold text-center mt-3 cursor-pointer transition-all duration-150"
           >
             Complete Trip & Sync
           </button>

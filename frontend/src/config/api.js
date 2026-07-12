@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
 });
 
 // Add a request interceptor to attach the JWT token
@@ -20,9 +20,10 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    if (error.response?.status === 401) {
+    // Only redirect if it's a 401 and not a login request
+    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
       localStorage.removeItem('transitops_token');
-      localStorage.removeItem('transitops_user');
+      sessionStorage.removeItem('transitops_session');
       window.location.href = '/login';
     }
     return Promise.reject(error.response?.data || error.message);

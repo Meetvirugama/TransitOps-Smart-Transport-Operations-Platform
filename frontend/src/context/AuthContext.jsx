@@ -8,6 +8,14 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // If DB was reset (version bump), clear stale session so new names load on next login
+    const currentDbVersion = localStorage.getItem('transitops_db_version');
+    const sessionDbVersion = sessionStorage.getItem('transitops_session_db_version');
+    if (currentDbVersion && sessionDbVersion !== currentDbVersion) {
+      sessionStorage.removeItem('transitops_session');
+      sessionStorage.setItem('transitops_session_db_version', currentDbVersion);
+    }
+
     const session = sessionStorage.getItem('transitops_session');
     if (session) {
       setUser(JSON.parse(session));

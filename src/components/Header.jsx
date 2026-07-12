@@ -18,27 +18,26 @@ export default function Header() {
   const displayName = user?.name || user?.email?.split('@')[0] || 'User';
   const displayRole = user?.role || 'Dispatcher';
   const initials = getInitials(displayName);
-
   return (
-    <header className="h-16 border-b border-dark-border flex items-center justify-between px-8 shrink-0 select-none">
+    <header className="h-16 border-b border-[#283945] flex items-center justify-between px-8 shrink-0 select-none bg-[#0d1318]">
       {/* Search Input Box */}
-      <div className="flex items-center gap-2 bg-dark-card border border-dark-border rounded-md px-3 py-1.5 w-64">
-        <span className="text-sm text-dark-muted" role="img" aria-label="search">🔍</span>
+      <div className="flex items-center gap-2 bg-[#162129] border border-[#283945] rounded-full px-3.5 py-1.5 w-64">
+        <span className="text-xs text-[#86898c]" role="img" aria-label="search">🔍</span>
         <input
           type="text"
-          placeholder="Search..."
-          className="bg-transparent border-none outline-none text-xs text-dark-text w-full placeholder:text-dark-muted/50"
+          placeholder="Search console..."
+          className="bg-transparent border-none outline-none text-xs text-[#ffffff] w-full placeholder:text-[#86898c]/50 p-0! focus:ring-0!"
         />
       </div>
 
       {/* User Identity badge */}
       <div className="flex items-center gap-3">
-        <span className="text-xs font-semibold text-dark-text">{displayName}</span>
+        <span className="text-xs font-semibold text-[#ffffff]">{displayName}</span>
         
-        {/* Role capsule matching mockups */}
-        <div className="flex items-center bg-accent-blue/10 border border-accent-blue/20 rounded-full pl-3 pr-1 py-0.5 gap-2">
-          <span className="text-[10px] font-bold text-accent-blue uppercase tracking-wider">{displayRole}</span>
-          <div className="w-6 h-6 rounded-full bg-accent-blue text-dark-text text-[10px] font-bold flex items-center justify-content-center justify-center">
+        {/* Role capsule matching Turso Pill Badge */}
+        <div className="flex items-center bg-[#0e342d] border border-[#4ff7d1]/20 rounded-full pl-3 pr-1 py-0.5 gap-2">
+          <span className="text-[9px] font-bold text-[#4ff7d1] uppercase tracking-wider">{displayRole}</span>
+          <div className="w-6 h-6 rounded-full bg-[#4ff7d1] text-[#0d1318] text-[9px] font-extrabold flex items-center justify-center">
             {initials}
           </div>
         </div>

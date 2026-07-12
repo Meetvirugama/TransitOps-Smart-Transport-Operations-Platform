@@ -18,16 +18,11 @@ const ProtectedRoute = ({ children }) => {
 // Main Layout Wrapper
 const Layout = ({ children }) => {
   return (
-    <div className="flex h-screen w-screen bg-[#030712] text-dark-text overflow-hidden font-sans relative">
-      {/* Background Aurora Blobs */}
-      <div className="absolute -top-[10%] -left-[10%] w-[500px] h-[500px] rounded-full bg-orange-500/15 blur-[120px] pointer-events-none z-0"></div>
-      <div className="absolute -bottom-[15%] -right-[10%] w-[600px] h-[600px] rounded-full bg-blue-500/20 blur-[150px] pointer-events-none z-0"></div>
-      <div className="absolute top-[30%] right-[20%] w-[400px] h-[400px] rounded-full bg-cyan-500/12 blur-[120px] pointer-events-none z-0"></div>
-
+    <div className="flex h-screen w-screen bg-[#0d1318] text-dark-text overflow-hidden font-sans">
       <Sidebar />
-      <div className="flex flex-col flex-1 h-full overflow-hidden relative z-10">
+      <div className="flex flex-col flex-1 h-full overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-y-auto p-8 relative">
+        <main className="flex-1 overflow-y-auto p-8">
           {children}
         </main>
       </div>

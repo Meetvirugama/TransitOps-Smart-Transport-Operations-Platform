@@ -99,17 +99,18 @@ export default function Dashboard() {
       {/* KPI Cards Row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
         {[
-          { title: 'Active Vehicles', val: kpis.activeCount, border: 'border-l-[3px] border-accent-cyan' },
-          { title: 'Available Vehicles', val: kpis.availableCount, border: 'border-l-[3px] border-accent-green' },
-          { title: 'Vehicles in Maintenance', val: kpis.inShopCount, border: 'border-l-[3px] border-accent-orange' },
-          { title: 'Active Trips', val: kpis.activeTripsCount, border: 'border-l-[3px] border-accent-blue' },
-          { title: 'Pending Trips', val: kpis.pendingTripsCount, border: 'border-l-[3px] border-accent-grey' },
-          { title: 'Drivers On Duty', val: kpis.driversOnDuty, border: 'border-l-[3px] border-accent-cyan' },
-          { title: 'Fleet Utilization', val: `${kpis.utilizationPct}%`, border: 'border-l-[3px] border-accent-green' }
+          { title: 'Active Vehicles', val: kpis.activeCount, dotColor: 'bg-[#c5cace]' },
+          { title: 'Available Vehicles', val: kpis.availableCount, dotColor: 'bg-[#4ff7d1]' },
+          { title: 'Vehicles in Maintenance', val: kpis.inShopCount, dotColor: 'bg-[#a21caf]' },
+          { title: 'Active Trips', val: kpis.activeTripsCount, dotColor: 'bg-[#4ff7d1]' },
+          { title: 'Pending Trips', val: kpis.pendingTripsCount, dotColor: 'bg-[#9ea1a3]' },
+          { title: 'Drivers On Duty', val: kpis.driversOnDuty, dotColor: 'bg-[#c5cace]' },
+          { title: 'Fleet Utilization', val: `${kpis.utilizationPct}%`, dotColor: 'bg-[#4ff7d1]' }
         ].map((c) => (
-          <div key={c.title} className={`bg-dark-card border border-dark-border rounded-lg p-4 flex flex-col gap-1.5 ${c.border}`}>
-            <div className="font-mono text-[9px] text-dark-muted font-bold tracking-wider uppercase leading-none">{c.title}</div>
-            <div className="font-heading text-2xl font-extrabold text-dark-text leading-tight">{c.val}</div>
+          <div key={c.title} className="bg-dark-card border border-dark-border rounded-xl p-4 flex flex-col gap-1.5 relative overflow-hidden">
+            <span className={`absolute top-3.5 right-3.5 w-1.5 h-1.5 rounded-full ${c.dotColor}`} />
+            <div className="font-mono text-[9px] text-dark-muted font-bold tracking-wider uppercase leading-none pr-3">{c.title}</div>
+            <div className="font-heading text-xl font-extrabold text-dark-text leading-tight mt-1">{c.val}</div>
           </div>
         ))}
       </div>
@@ -122,7 +123,7 @@ export default function Dashboard() {
           <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-dark-border font-mono text-[10px] text-dark-muted uppercase font-semibold">
+                <tr className="border-b border-dark-border font-mono text-[9px] text-dark-muted uppercase font-bold tracking-wider">
                   <th className="pb-3 px-4">Trip</th>
                   <th className="pb-3 px-4">Vehicle</th>
                   <th className="pb-3 px-4">Driver</th>
@@ -138,29 +139,29 @@ export default function Dashboard() {
                 ) : (
                   recentTrips.map((t) => {
                     let eta = '—';
-                    let pillColor = 'bg-white/8 text-dark-muted border-white/10';
+                    let pillStyle = 'bg-[#162129] text-[#9ea1a3] border-[#283945]'; // default
                     if (t.status === 'Dispatched') {
                       eta = '45 min';
-                      pillColor = 'bg-accent-cyan/12 text-accent-cyan border-accent-cyan/25';
+                      pillStyle = 'bg-[#0e342d] text-[#4ff7d1] border-[#4ff7d1]/20';
                     }
                     if (t.status === 'Draft') {
                       eta = 'Awaiting vehicle';
-                      pillColor = 'bg-white/5 text-dark-muted border-white/10';
+                      pillStyle = 'bg-[#162129] text-[#86898c] border-[#283945]';
                     }
                     if (t.status === 'Completed') {
-                      pillColor = 'bg-accent-green/12 text-accent-green border-accent-green/25';
+                      pillStyle = 'bg-[#0e342d] text-[#4ff7d1] border-[#4ff7d1]/20';
                     }
                     if (t.status === 'Cancelled') {
-                      pillColor = 'bg-accent-red/12 text-accent-red border-accent-red/25';
+                      pillStyle = 'bg-[#0d1318] text-[#d946ef] border-[#d946ef]/20';
                     }
 
                     return (
-                      <tr key={t.id} className="border-b border-white/[0.01] hover:bg-white/[0.01]">
-                        <td className="py-3 px-4 font-mono font-semibold">{t.id}</td>
-                        <td className="py-3 px-4 font-mono">{t.vehicle || '—'}</td>
-                        <td className="py-3 px-4">{t.driver || '—'}</td>
+                      <tr key={t.id} className="border-b border-white/[0.01]">
+                        <td className="py-3 px-4 font-mono font-semibold text-[#ffffff]">{t.id}</td>
+                        <td className="py-3 px-4 font-mono text-[#c5cace]">{t.vehicle || '—'}</td>
+                        <td className="py-3 px-4 text-[#c5cace]">{t.driver || '—'}</td>
                         <td className="py-3 px-4">
-                          <span className={`inline-flex px-2 py-0.5 rounded border text-[10px] font-semibold uppercase ${pillColor}`}>
+                          <span className={`inline-flex px-2.5 py-0.5 rounded-full border text-[9px] font-bold uppercase tracking-wider ${pillStyle}`}>
                             {t.status}
                           </span>
                         </td>
@@ -179,22 +180,22 @@ export default function Dashboard() {
           <h3 className="font-heading text-sm font-semibold text-dark-text">Vehicle Status</h3>
           <div className="flex flex-col gap-4.5">
             {[
-              { label: 'Available', color: 'bg-accent-green', count: kpis.availableCount },
-              { label: 'On Trip', color: 'bg-accent-blue', count: kpis.activeCount },
-              { label: 'In Shop', color: 'bg-accent-orange', count: kpis.inShopCount },
-              { label: 'Retired', color: 'bg-accent-red', count: kpis.retiredCount }
+              { label: 'Available', color: 'bg-[#4ff7d1]', count: kpis.availableCount },
+              { label: 'On Trip', color: 'bg-[#c5cace]', count: kpis.activeCount },
+              { label: 'In Shop', color: 'bg-[#a21caf]', count: kpis.inShopCount },
+              { label: 'Retired', color: 'bg-[#d946ef]', count: kpis.retiredCount }
             ].map((bar) => {
               const pct = Math.round((bar.count / kpis.totalVehicles) * 100);
               return (
                 <div key={bar.label} className="flex items-center gap-4 w-full text-xs">
                   <div className="w-16 text-dark-muted font-medium">{bar.label}</div>
-                  <div className="flex-1 h-2 bg-dark-bg rounded-full overflow-hidden">
+                  <div className="flex-1 h-2 bg-[#0d1318] rounded-full overflow-hidden border border-[#283945]/30">
                     <div 
                       className={`h-full rounded-full transition-all duration-500 ease-out ${bar.color}`}
                       style={{ width: `${pct}%` }}
                     ></div>
                   </div>
-                  <div className="w-8 text-right font-mono font-semibold">{bar.count.toString().padStart(2, '0')}</div>
+                  <div className="w-8 text-right font-mono font-semibold text-[#ffffff]">{bar.count.toString().padStart(2, '0')}</div>
                 </div>
               );
             })}

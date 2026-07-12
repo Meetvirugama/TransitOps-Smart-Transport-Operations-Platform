@@ -156,7 +156,7 @@ export default function Drivers() {
 
         <button 
           onClick={handleOpenAddModal}
-          className="bg-brand hover:bg-brand-hover text-dark-text border-none px-4 py-2 rounded-md text-xs font-semibold cursor-pointer shadow-[0_4px_12px_rgba(178,94,19,0.35)] transition-all duration-200 hover:-translate-y-[1px]"
+          className="bg-[#4ff7d1] hover:bg-[#3ee0be] text-[#0d1318] border-none px-4 py-2 rounded-full text-xs font-semibold cursor-pointer transition-all duration-150"
         >
           + Add Driver
         </button>
@@ -166,7 +166,7 @@ export default function Drivers() {
       <div className="bg-dark-card border border-dark-border rounded-xl p-4 overflow-x-auto">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="border-b border-dark-border font-mono text-[10px] text-dark-muted uppercase font-semibold">
+            <tr className="border-b border-dark-border font-mono text-[9px] text-dark-muted uppercase font-bold tracking-wider">
               <th className="pb-3 px-4">Driver</th>
               <th className="pb-3 px-4">License No</th>
               <th className="pb-3 px-4">Category</th>
@@ -189,7 +189,7 @@ export default function Drivers() {
                 const expDate = new Date(d.licenseExpiryDate);
                 const isExpired = expDate < new Date();
                 const formattedExpiry = isExpired 
-                  ? <span className="text-accent-red font-bold">{d.licenseExpiryDate.slice(5, 7)}/{d.licenseExpiryDate.slice(0, 4)} EXPIRED</span>
+                  ? <span className="text-[#d946ef] font-bold">{d.licenseExpiryDate.slice(5, 7)}/{d.licenseExpiryDate.slice(0, 4)} EXPIRED</span>
                   : `${d.licenseExpiryDate.slice(5, 7)}/${d.licenseExpiryDate.slice(0, 4)}`;
 
                 // Contact Masking matching mockup (98765xxxxx)
@@ -198,18 +198,18 @@ export default function Drivers() {
                   : d.contactNumber;
 
                 // Safety score color threshold
-                let scoreColor = 'text-accent-green';
-                if (d.safetyScore < 90) scoreColor = 'text-accent-orange';
-                if (d.safetyScore < 80) scoreColor = 'text-accent-red';
+                let scoreColor = 'text-[#4ff7d1]';
+                if (d.safetyScore < 90) scoreColor = 'text-[#a21caf]';
+                if (d.safetyScore < 80) scoreColor = 'text-[#d946ef]';
 
                 return (
-                  <tr key={index} className="border-b border-white/[0.01] hover:bg-white/[0.01]">
-                    <td className="py-3.5 px-4 font-semibold">{d.name}</td>
-                    <td className="py-3.5 px-4 font-mono">{d.licenseNumber}</td>
-                    <td className="py-3.5 px-4">{d.licenseCategory}</td>
-                    <td className="py-3.5 px-4">{formattedExpiry}</td>
-                    <td className="py-3.5 px-4">{maskedContact}</td>
-                    <td className="py-3.5 px-4">96%</td>
+                  <tr key={index} className="border-b border-white/[0.01]">
+                    <td className="py-3.5 px-4 font-semibold text-[#ffffff]">{d.name}</td>
+                    <td className="py-3.5 px-4 font-mono text-[#c5cace]">{d.licenseNumber}</td>
+                    <td className="py-3.5 px-4 text-[#c5cace]">{d.licenseCategory}</td>
+                    <td className="py-3.5 px-4 text-[#c5cace]">{formattedExpiry}</td>
+                    <td className="py-3.5 px-4 text-[#c5cace]">{maskedContact}</td>
+                    <td className="py-3.5 px-4 text-[#c5cace]">96%</td>
                     <td className="py-3.5 px-4 font-semibold">
                       <span className={scoreColor}>{d.safetyScore}/100</span>
                     </td>
@@ -218,7 +218,7 @@ export default function Drivers() {
                       <select
                         value={d.status}
                         onChange={(e) => handleInlineStatusChange(index, e.target.value)}
-                        className="bg-dark border border-dark-border rounded px-2 py-1 text-[11px] text-dark-text outline-none cursor-pointer"
+                        className="bg-[#121b1f] border border-[#283945] rounded-full px-3.5 py-1 text-[11px] text-[#ffffff] outline-none cursor-pointer"
                       >
                         <option value="Available">Available</option>
                         <option value="On Trip">On Trip</option>
@@ -229,13 +229,13 @@ export default function Drivers() {
                     <td className="py-3.5 px-4 flex gap-2">
                       <button 
                         onClick={() => handleOpenEditModal(d, index)}
-                        className="bg-transparent border border-dark-border hover:border-brand hover:text-brand px-2.5 py-1 rounded text-[10px] cursor-pointer transition-all duration-150"
+                        className="bg-transparent border border-dark-border hover:border-brand hover:text-brand px-3 py-1 rounded-full text-[9px] cursor-pointer transition-all duration-150"
                       >
                         Edit
                       </button>
                       <button 
                         onClick={() => handleDelete(index)}
-                        className="bg-transparent border border-dark-border hover:border-accent-red hover:text-accent-red px-2.5 py-1 rounded text-[10px] cursor-pointer transition-all duration-150"
+                        className="bg-transparent border border-dark-border hover:border-accent-red hover:text-accent-red px-3 py-1 rounded-full text-[9px] cursor-pointer transition-all duration-150"
                       >
                         Delete
                       </button>
@@ -248,8 +248,8 @@ export default function Drivers() {
         </table>
       </div>
 
-      <div className="font-heading text-xs text-accent-orange font-medium mt-1 opacity-90 leading-none select-none">
-        Rule: Expired license or Suspended status &rarr; blocked from trip assignment
+      <div className="font-mono text-[9px] text-[#86898c] mt-2 select-none uppercase tracking-wider">
+        Console Rule: Expired license or Suspended status &rarr; blocked from trip assignment
       </div>
 
       {/* Add/Edit Modal */}

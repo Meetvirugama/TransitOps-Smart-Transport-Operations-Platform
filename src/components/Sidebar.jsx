@@ -23,50 +23,60 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-60 bg-[#070A12] border-r border-dark-border flex flex-col justify-between py-6 shrink-0 h-full">
+    <aside className="w-60 bg-[#121b1f] border-r border-[#283945] flex flex-col justify-between py-6 shrink-0 h-full">
       {/* Brand Header */}
       <div>
-        <div className="flex items-center gap-3 px-6 pb-6 border-b border-dark-border select-none">
+        <div className="flex items-center gap-3 px-6 pb-6 border-b border-[#283945] select-none">
           <div className="grid grid-cols-3 gap-[3px] w-7 h-7" aria-hidden="true">
-            <span className="bg-brand rounded-[2px] opacity-85 rounded-tl-[4px]"></span>
-            <span className="bg-brand rounded-[2px] opacity-85"></span>
-            <span className="bg-brand rounded-[2px] opacity-85 rounded-tr-[4px]"></span>
-            <span className="bg-brand rounded-[2px] opacity-85"></span>
-            <span className="bg-brand rounded-[2px] opacity-85"></span>
-            <span className="bg-brand rounded-[2px] opacity-85"></span>
-            <span className="bg-brand rounded-[2px] opacity-85 rounded-bl-[4px]"></span>
-            <span className="bg-brand rounded-[2px] opacity-85"></span>
-            <span className="bg-brand rounded-[2px] opacity-85 rounded-br-[4px]"></span>
+            <span className="bg-[#4ff7d1] rounded-[2px] opacity-85 rounded-tl-[4px]"></span>
+            <span className="bg-[#4ff7d1] rounded-[2px] opacity-85"></span>
+            <span className="bg-[#4ff7d1] rounded-[2px] opacity-85 rounded-tr-[4px]"></span>
+            <span className="bg-[#4ff7d1] rounded-[2px] opacity-85"></span>
+            <span className="bg-[#4ff7d1] rounded-[2px] opacity-85"></span>
+            <span className="bg-[#4ff7d1] rounded-[2px] opacity-85"></span>
+            <span className="bg-[#4ff7d1] rounded-[2px] opacity-85 rounded-bl-[4px]"></span>
+            <span className="bg-[#4ff7d1] rounded-[2px] opacity-85"></span>
+            <span className="bg-[#4ff7d1] rounded-[2px] opacity-85 rounded-br-[4px]"></span>
           </div>
-          <h2 className="font-heading text-lg font-bold text-dark-text tracking-wide">TransitOps</h2>
+          <h2 className="font-heading text-base font-extrabold text-[#ffffff] tracking-tight">TransitOps</h2>
         </div>
 
         {/* Menu Navigation */}
-        <nav className="flex flex-col gap-1 py-6 overflow-y-auto max-h-[calc(100vh-200px)]">
+        <nav className="flex flex-col gap-1 py-6 overflow-y-auto max-h-[calc(100vh-200px)] px-3">
           {menuItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-6 py-3 text-sm font-medium border-l-[3px] transition-all duration-200 ${
+                `flex items-center justify-between px-4 py-2.5 rounded-full text-xs font-semibold tracking-tight transition-all duration-150 ${
                   isActive
-                    ? 'border-brand bg-brand/5 text-dark-text font-semibold'
-                    : 'border-transparent text-dark-muted hover:bg-white/2 hover:text-dark-text'
+                    ? 'bg-[#162129] text-[#ffffff] border border-[#283945]'
+                    : 'text-[#b6b8ba] hover:bg-[#162129]/50 hover:text-[#ffffff]'
                 }`
               }
             >
-              <span className="text-base inline-block w-5 text-center">{item.icon}</span>
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm inline-block text-center">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </div>
+                  {/* Mint active indicator dot */}
+                  <span className={`w-1.5 h-1.5 rounded-full bg-[#4ff7d1] transition-opacity duration-150 ${
+                    isActive ? 'opacity-100' : 'opacity-0'
+                  }`}></span>
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
       </div>
 
       {/* Footer Sign Out */}
-      <div className="px-6 border-t border-dark-border pt-6">
+      <div className="px-6 border-t border-[#283945] pt-6">
         <button
           onClick={handleSignOut}
-          className="w-full bg-transparent border border-dark-border hover:border-accent-red hover:bg-accent-red/5 hover:text-dark-text text-dark-muted text-xs font-semibold py-2.5 px-4 rounded-md transition-all duration-200 cursor-pointer"
+          className="w-full bg-transparent border border-[#283945] hover:bg-[#283945] text-[#ffffff] text-xs font-semibold py-2.5 px-4 rounded-full transition-all duration-150 cursor-pointer text-center"
         >
           Sign Out
         </button>

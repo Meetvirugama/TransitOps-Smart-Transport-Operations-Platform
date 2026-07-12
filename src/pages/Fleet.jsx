@@ -204,35 +204,35 @@ export default function Fleet() {
               </tr>
             ) : (
               filteredVehicles.map((v) => {
-                let pillColor = 'bg-white/8 text-dark-muted border-white/10';
-                if (v.status === 'Available') pillColor = 'bg-accent-green/12 text-accent-green border-accent-green/25';
-                if (v.status === 'On Trip') pillColor = 'bg-accent-blue/12 text-accent-blue border-accent-blue/25';
-                if (v.status === 'In Shop') pillColor = 'bg-accent-orange/12 text-accent-orange border-accent-orange/25';
-                if (v.status === 'Retired') pillColor = 'bg-accent-red/12 text-accent-red border-accent-red/25';
+                let pillColor = 'bg-[#162129] text-[#9ea1a3] border-[#283945]';
+                if (v.status === 'Available') pillColor = 'bg-[#0e342d] text-[#4ff7d1] border-[#4ff7d1]/20';
+                if (v.status === 'On Trip') pillColor = 'bg-[#162129] text-[#c5cace] border-[#283945]';
+                if (v.status === 'In Shop') pillColor = 'bg-[#0d1318] text-[#a21caf] border-[#a21caf]/20';
+                if (v.status === 'Retired') pillColor = 'bg-[#0d1318] text-[#d946ef] border-[#d946ef]/20';
 
                 return (
-                  <tr key={v.registrationNumber} className="border-b border-white/[0.01] hover:bg-white/[0.01]">
-                    <td className="py-3.5 px-4 font-mono font-semibold">{v.registrationNumber}</td>
-                    <td className="py-3.5 px-4">{v.name}</td>
-                    <td className="py-3.5 px-4">{v.type}</td>
-                    <td className="py-3.5 px-4">{v.maxCapacity} kg</td>
-                    <td className="py-3.5 px-4 font-mono">{v.odometer.toLocaleString()}</td>
-                    <td className="py-3.5 px-4 font-mono">${v.acquisitionCost.toLocaleString('en-IN')}</td>
+                  <tr key={v.registrationNumber} className="border-b border-white/[0.01]">
+                    <td className="py-3.5 px-4 font-mono font-semibold text-[#ffffff]">{v.registrationNumber}</td>
+                    <td className="py-3.5 px-4 text-[#c5cace]">{v.name}</td>
+                    <td className="py-3.5 px-4 text-[#c5cace]">{v.type}</td>
+                    <td className="py-3.5 px-4 text-[#c5cace]">{v.maxCapacity} kg</td>
+                    <td className="py-3.5 px-4 font-mono text-[#c5cace]">{v.odometer.toLocaleString()}</td>
+                    <td className="py-3.5 px-4 font-mono text-[#c5cace]">${v.acquisitionCost.toLocaleString('en-IN')}</td>
                     <td className="py-3.5 px-4">
-                      <span className={`inline-flex px-2 py-0.5 rounded border text-[10px] font-semibold uppercase ${pillColor}`}>
+                      <span className={`inline-flex px-2.5 py-0.5 rounded-full border text-[9px] font-bold uppercase tracking-wider ${pillColor}`}>
                         {v.status}
                       </span>
                     </td>
                     <td className="py-3.5 px-4 flex gap-2">
                       <button 
                         onClick={() => handleOpenEditModal(v)}
-                        className="bg-transparent border border-dark-border hover:border-brand hover:text-brand px-2.5 py-1 rounded text-[10px] cursor-pointer transition-all duration-150"
+                        className="bg-transparent border border-dark-border hover:border-brand hover:text-brand px-3 py-1 rounded-full text-[9px] cursor-pointer transition-all duration-150"
                       >
                         Edit
                       </button>
                       <button 
                         onClick={() => handleDelete(v.registrationNumber)}
-                        className="bg-transparent border border-dark-border hover:border-accent-red hover:text-accent-red px-2.5 py-1 rounded text-[10px] cursor-pointer transition-all duration-150"
+                        className="bg-transparent border border-dark-border hover:border-accent-red hover:text-accent-red px-3 py-1 rounded-full text-[9px] cursor-pointer transition-all duration-150"
                       >
                         Delete
                       </button>
@@ -245,8 +245,8 @@ export default function Fleet() {
         </table>
       </div>
 
-      <div className="font-heading text-xs text-accent-orange font-medium mt-1 opacity-90 leading-none select-none">
-        Rule: Registration No. must be unique &middot; Retired/In Shop vehicles are hidden from Trip Dispatcher
+      <div className="font-mono text-[9px] text-[#86898c] mt-2 select-none uppercase tracking-wider">
+        Console Rule: Registration No. must be unique &middot; Retired/In Shop vehicles are hidden from Trip Dispatcher
       </div>
 
       {/* Add/Edit Modal */}

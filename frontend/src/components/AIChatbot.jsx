@@ -10,7 +10,7 @@ const SUGGESTED_PROMPTS = [
 
 function TypingIndicator() {
   return (
-    <div className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl rounded-bl-sm bg-white/5 border border-white/8 w-fit">
+    <div className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl rounded-bl-sm bg-white/5 border border-white/10 w-fit">
       {[0, 1, 2].map(i => (
         <span
           key={i}
@@ -35,7 +35,7 @@ function Message({ role, content }) {
         className={`max-w-[82%] px-3 py-2.5 rounded-xl text-xs leading-relaxed whitespace-pre-wrap ${
           isUser
             ? 'bg-brand/20 border border-brand/30 text-dark-text rounded-br-sm'
-            : 'bg-white/5 border border-white/8 text-dark-text rounded-bl-sm'
+            : 'bg-white/5 border border-white/10 text-dark-text rounded-bl-sm'
         }`}
       >
         {content}
@@ -125,7 +125,7 @@ export default function AIChatbot() {
         aria-modal="true"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/8 bg-white/2">
+        <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/10 bg-white/5">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-brand/15 border border-brand/30 flex items-center justify-center text-sm">
               🤖
@@ -179,7 +179,7 @@ export default function AIChatbot() {
         )}
 
         {/* Input */}
-        <div className="px-4 py-3 border-t border-white/8 flex items-center gap-2">
+        <div className="px-4 py-3 border-t border-white/10 flex items-center gap-2">
           <input
             ref={inputRef}
             type="text"
@@ -188,7 +188,7 @@ export default function AIChatbot() {
             onKeyDown={handleKeyDown}
             placeholder="Ask about your fleet..."
             disabled={loading}
-            className="flex-1 bg-white/4 border border-white/10 rounded-xl px-3 py-2 text-xs text-dark-text placeholder-dark-muted outline-none focus:border-brand/40 focus:bg-white/6 transition-all disabled:opacity-50"
+            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-dark-text placeholder-dark-muted outline-none focus:border-brand/40 focus:bg-white/10 transition-all disabled:opacity-50"
             aria-label="Chat input"
             maxLength={1000}
           />

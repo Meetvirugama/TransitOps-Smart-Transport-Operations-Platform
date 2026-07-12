@@ -119,16 +119,18 @@ const seedMoreData = async () => {
     }
 
     // 6. Insert 50 Revenues
-    const { rows: tRows } = await client.query('SELECT id FROM trips WHERE status = \'Completed\'');
+    const { rows: tRows } = await client.query('SELECT id, vehicle_id FROM trips WHERE status = \'Completed\'');
     for (let i = 0; i < 50; i++) {
       if (tRows.length === 0) break;
+      const trip = randomElement(tRows);
       await client.query(`
-        INSERT INTO revenues (trip_id, amount, source, payment_status, revenue_date)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO revenues (trip_id, vehicle_id, amount, customer_name, payment_status, received_date)
+        VALUES ($1, $2, $3, $4, $5, $6)
       `, [
-        randomElement(tRows).id,
+        trip.id,
+        trip.vehicle_id,
         randomFloat(5000, 50000),
-        randomElement(['Freight', 'Logistics Contract']),
+        randomElement(['Freight Corp', 'Logistics LLC']),
         'Paid',
         randomDateInPast(30)
       ]);

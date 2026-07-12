@@ -41,7 +41,7 @@ export default function Drivers() {
   // Filter Drivers
   const filteredDrivers = useMemo(() => {
     return drivers.filter(d => {
-      const matchSearch = d.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      const matchSearch = d.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           d.license_number?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchStatus = activeStatusFilter === 'All' || d.status === activeStatusFilter;
       return matchSearch && matchStatus;
@@ -64,12 +64,12 @@ export default function Drivers() {
   const handleOpenEditModal = (d, idx) => {
     setIsEditing(true);
     setEditingIdx(d.id); // store ID instead of idx
-    setName(d.name);
+    setName(d.full_name);
     setLicNo(d.license_number);
     const defaultCatName = categoriesList.length > 0 ? categoriesList[0].name : '';
-    setCategory(d.license_category ? d.license_category.name : defaultCatName);
+    setCategory(d.license_category_name ? d.license_category_name : defaultCatName);
     setExpiry(d.license_expiry_date ? d.license_expiry_date.substring(0, 10) : '');
-    setContact(d.contact_number);
+    setContact(d.phone);
     setSafetyScore(d.safety_score);
     setStatus(d.status);
     setIsModalOpen(true);
@@ -100,11 +100,11 @@ export default function Drivers() {
     const parsedSafety = parseInt(safetyScore, 10);
 
     const payload = {
-      name: name.trim(),
+      full_name: name.trim(),
       license_number: licNo.trim().toUpperCase(),
       license_category_id: categoriesList.find(c => c.name === category)?.id || 1,
       license_expiry_date: expiry,
-      contact_number: contact.trim(),
+      phone: contact.trim(),
       safety_score: parsedSafety,
       status
     };
@@ -195,22 +195,22 @@ export default function Drivers() {
         ) : (
           filteredDrivers.map((d, index) => {
             // Expiry Check
-            const expDate = new Date(d.licenseExpiryDate);
+            const expDate = new Date(d.license_expiry_date);
             const isExpired = expDate < new Date();
             const formattedExpiry = isExpired
-              ? <span className="text-[#d946ef] font-bold font-mono">{d.licenseExpiryDate.slice(5, 7)}/{d.licenseExpiryDate.slice(0, 4)} EXP</span>
-              : `${d.licenseExpiryDate.slice(5, 7)}/${d.licenseExpiryDate.slice(0, 4)}`;
+              ? <span className="text-[#d946ef] font-bold font-mono">{d.license_expiry_date.slice(5, 7)}/{d.license_expiry_date.slice(0, 4)} EXP</span>
+              : `${d.license_expiry_date.slice(5, 7)}/${d.license_expiry_date.slice(0, 4)}`;
 
             // Contact Masking
-            const maskedContact = d.contactNumber.length > 5
-              ? `${d.contactNumber.slice(0, 5)}xxxxx`
-              : d.contactNumber;
+            const maskedContact = d.phone && d.phone.length > 5
+              ? `${d.phone.slice(0, 5)}xxxxx`
+              : d.phone || '—';
 
             // Safety score color threshold
             let scoreColor = 'text-[#4ff7d1]';
             let barColor = 'bg-[#4ff7d1]';
-            if (d.safetyScore < 90) { scoreColor = 'text-[#a21caf]'; barColor = 'bg-[#a21caf]'; }
-            if (d.safetyScore < 80) { scoreColor = 'text-[#d946ef]'; barColor = 'bg-[#d946ef]'; }
+            if (d.safety_score < 90) { scoreColor = 'text-[#a21caf]'; barColor = 'bg-[#a21caf]'; }
+            if (d.safety_score < 80) { scoreColor = 'text-[#d946ef]'; barColor = 'bg-[#d946ef]'; }
 
             // Status-based border glow
             let glowBorder = 'border-dark-border hover:border-[#4ff7d1]/30';
@@ -224,16 +224,16 @@ export default function Drivers() {
                 className={`glass-table-row grid items-center px-5 py-4 rounded-xl border bg-[#121b1f]/80 backdrop-blur-sm transition-all duration-300 hover:bg-[#162129]/90 hover:shadow-[0_0_18px_rgba(79,247,209,0.06)] ${glowBorder}`}
                 style={{ gridTemplateColumns: '1.3fr 1.2fr 0.55fr 0.65fr 1fr 0.55fr 0.85fr 1.1fr 160px', gap: '1rem', animationDelay: `${index * 40}ms` }}
               >
-                <span className="font-semibold text-[#ffffff] text-xs">{d.name}</span>
-                <span className="font-mono text-[#c5cace] text-xs">{d.licenseNumber}</span>
-                <span className="text-[#86898c] text-xs">{d.licenseCategory}</span>
+                <span className="font-semibold text-[#ffffff] text-xs">{d.full_name}</span>
+                <span className="font-mono text-[#c5cace] text-xs">{d.license_number}</span>
+                <span className="text-[#86898c] text-xs">{d.license_category_name}</span>
                 <span className="text-[#c5cace] text-xs">{formattedExpiry}</span>
                 <span className="text-[#c5cace] text-xs font-mono">{maskedContact}</span>
                 <span className="text-[#c5cace] text-xs">96%</span>
                 <div className="flex flex-col gap-1">
-                  <span className={`font-mono font-bold text-xs ${scoreColor}`}>{d.safetyScore}/100</span>
+                  <span className={`font-mono font-bold text-xs ${scoreColor}`}>{d.safety_score}/100</span>
                   <div className="w-full h-1 rounded-full bg-[#283945] overflow-hidden">
-                    <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${d.safetyScore}%` }} />
+                    <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${d.safety_score}%` }} />
                   </div>
                 </div>
                 {/* Dynamic status selection dropdown */}

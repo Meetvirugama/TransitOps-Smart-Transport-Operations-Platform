@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../config/api';
 
 export default function Dashboard() {
   const [vehicleType, setVehicleType] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All');
   const [regionFilter, setRegionFilter] = useState('All');
   
   const [vehicleTypesList, setVehicleTypesList] = useState([]);

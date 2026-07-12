@@ -292,7 +292,7 @@ export default function Trips() {
   };
 
   return (
-    <div className="flex flex-col gap-6 select-none h-[calc(100vh-120px)]">
+    <div className="flex flex-col gap-6 select-none h-[calc(100vh-120px)] animate-page-fade">
       <div className="flex justify-between items-center shrink-0">
         <h2 className="font-heading text-2xl font-bold text-dark-text">4. Trip Dispatcher</h2>
       </div>
@@ -324,12 +324,12 @@ export default function Trips() {
                     {idx > 0 && <span className="w-6 h-[2px] bg-[#283945]"></span>}
                     <div 
                       onClick={() => handleStepClick(step)}
-                      className={`flex items-center gap-1.5 transition-all duration-150 ${
+                      className={`flex items-center gap-1.5 transition-all-custom ${
                         selectedTripId ? 'cursor-pointer' : 'cursor-default'
                       } ${isActive ? 'opacity-100' : 'opacity-35'}`}
                     >
-                      <span className={`w-2.5 h-2.5 rounded-full inline-block ${dotColor}`}></span>
-                      <span className="text-[10px] font-bold text-dark-text">{step}</span>
+                      <span className={`w-2.5 h-2.5 rounded-full inline-block ${dotColor} ${isActive && (step === 'Draft' || step === 'Completed') ? 'animate-signal-breathe' : ''}`}></span>
+                      <span className="text-[11px] font-bold text-dark-text">{step}</span>
                     </div>
                   </React.Fragment>
                 );
@@ -339,27 +339,27 @@ export default function Trips() {
 
           <form onSubmit={handleDispatchSubmit} className="flex flex-col gap-4 text-xs">
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="font-mono text-[9px] text-[#b6b8ba] font-bold tracking-wider uppercase">Source</label>
+              <div className="flex flex-col gap-2">
+                <label className="font-mono text-xs text-[#b6b8ba] font-bold tracking-wider uppercase">Source</label>
                 <input
                   type="text"
                   value={source}
                   onChange={(e) => setSource(e.target.value)}
                   disabled={selectedTripId !== null}
-                  className="w-full bg-[#121b1f] border border-[#283945] text-[#ffffff] disabled:opacity-50"
+                  className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl transition-all-custom hover-glow disabled:opacity-50"
                   placeholder="Gandhinagar Depot"
                   required
                 />
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="font-mono text-[9px] text-[#b6b8ba] font-bold tracking-wider uppercase">Destination</label>
+              <div className="flex flex-col gap-2">
+                <label className="font-mono text-xs text-[#b6b8ba] font-bold tracking-wider uppercase">Destination</label>
                 <input
                   type="text"
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
                   disabled={selectedTripId !== null}
-                  className="w-full bg-[#121b1f] border border-[#283945] text-[#ffffff] disabled:opacity-50"
+                  className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl transition-all-custom hover-glow disabled:opacity-50"
                   placeholder="Ahmedabad Hub"
                   required
                 />
@@ -367,20 +367,20 @@ export default function Trips() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="font-mono text-[9px] text-[#b6b8ba] font-bold tracking-wider uppercase">Vehicle (Available Only)</label>
+              <div className="flex flex-col gap-2">
+                <label className="font-mono text-xs text-[#b6b8ba] font-bold tracking-wider uppercase">Vehicle (Available Only)</label>
                 {selectedTripId ? (
                   <input
                     type="text"
                     value={selectedVehReg}
                     disabled
-                    className="w-full bg-[#121b1f] border border-[#283945] text-[#ffffff] opacity-50 font-mono"
+                    className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl opacity-50 font-mono"
                   />
                 ) : (
                   <select
                     value={selectedVehReg}
                     onChange={(e) => setSelectedVehReg(e.target.value)}
-                    className="w-full bg-[#121b1f] border border-[#283945] text-[#ffffff] cursor-pointer appearance-none"
+                    className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl cursor-pointer appearance-none transition-all-custom hover-glow"
                     style={{
                       backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2386898c'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
                       backgroundRepeat: 'no-repeat',
@@ -399,20 +399,20 @@ export default function Trips() {
                 )}
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="font-mono text-[9px] text-[#b6b8ba] font-bold tracking-wider uppercase">Driver (Available Only)</label>
+              <div className="flex flex-col gap-2">
+                <label className="font-mono text-xs text-[#b6b8ba] font-bold tracking-wider uppercase">Driver (Available Only)</label>
                 {selectedTripId ? (
                   <input
                     type="text"
                     value={selectedDrvName}
                     disabled
-                    className="w-full bg-[#121b1f] border border-[#283945] text-[#ffffff] opacity-50"
+                    className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl opacity-50"
                   />
                 ) : (
                   <select
                     value={selectedDrvName}
                     onChange={(e) => setSelectedDrvName(e.target.value)}
-                    className="w-full bg-[#121b1f] border border-[#283945] text-[#ffffff] cursor-pointer appearance-none"
+                    className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl cursor-pointer appearance-none transition-all-custom hover-glow"
                     style={{
                       backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2386898c'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
                       backgroundRepeat: 'no-repeat',
@@ -433,27 +433,27 @@ export default function Trips() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="font-mono text-[9px] text-[#b6b8ba] font-bold tracking-wider uppercase">Cargo Weight (KG)</label>
+              <div className="flex flex-col gap-2">
+                <label className="font-mono text-xs text-[#b6b8ba] font-bold tracking-wider uppercase">Cargo Weight (KG)</label>
                 <input
                   type="number"
                   value={cargoWeight}
                   onChange={(e) => setCargoWeight(e.target.value)}
                   disabled={selectedTripId !== null}
-                  className="w-full bg-[#121b1f] border border-[#283945] text-[#ffffff] disabled:opacity-50"
+                  className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl transition-all-custom hover-glow disabled:opacity-50"
                   placeholder="700"
                   required
                 />
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="font-mono text-[9px] text-[#b6b8ba] font-bold tracking-wider uppercase">Planned Distance (KM)</label>
+              <div className="flex flex-col gap-2">
+                <label className="font-mono text-xs text-[#b6b8ba] font-bold tracking-wider uppercase">Planned Distance (KM)</label>
                 <input
                   type="number"
                   value={plannedDistance}
                   onChange={(e) => setPlannedDistance(e.target.value)}
                   disabled={selectedTripId !== null}
-                  className="w-full bg-[#121b1f] border border-[#283945] text-[#ffffff] disabled:opacity-50"
+                  className="w-full bg-[#121b1f] border border-[#283945] text-sm text-[#ffffff] py-2.5 px-4 rounded-xl transition-all-custom hover-glow disabled:opacity-50"
                   placeholder="38"
                   required
                 />
@@ -462,11 +462,11 @@ export default function Trips() {
 
             {/* Capacity Warning Alert box - Re-styled to Turso warning */}
             {capacityWarning && (
-              <div className="bg-[#0d1318] border border-[#d946ef] p-4 rounded-xl flex flex-col gap-1 z-10 font-mono text-[10px]">
-                <div className="font-bold text-[#d946ef]">⚠️ SYSTEM STATUS: EXCEEDED</div>
+              <div className="bg-[#0d1318] border border-[#ef4444] p-4 rounded-xl flex flex-col gap-1 z-10 font-mono text-[11px] text-[#ef4444]">
+                <div className="font-bold">SYSTEM STATUS: EXCEEDED</div>
                 <div className="text-[#c5cace] mt-1">Vehicle Capacity Limit: {capacityLimit} kg</div>
                 <div className="text-[#c5cace]">Cargo Weight Requested: {cargoWeight} kg</div>
-                <div className="font-bold text-[#d946ef] mt-1">❌ Dispatch operation rejected by {excessWeight} kg</div>
+                <div className="font-bold mt-1">Dispatch operation rejected by {excessWeight} kg</div>
               </div>
             )}
 
@@ -475,7 +475,7 @@ export default function Trips() {
                 <button
                   type="button"
                   onClick={handleResetForm}
-                  className="flex-1 bg-transparent border border-[#283945] hover:bg-[#283945] text-[#ffffff] py-3 rounded-full font-semibold text-center cursor-pointer transition-all duration-150"
+                  className="flex-1 bg-transparent border border-[#283945] hover:bg-[#283945] text-[#ffffff] py-3.5 rounded-full font-bold text-sm text-center cursor-pointer transition-all duration-150"
                 >
                   Close Detail View
                 </button>
@@ -484,7 +484,7 @@ export default function Trips() {
                   <button
                     type="submit"
                     disabled={capacityWarning}
-                    className={`flex-[1.5] py-3 rounded-full font-semibold text-center transition-all duration-150 cursor-pointer ${
+                    className={`flex-[1.5] py-3.5 rounded-full font-bold text-sm text-center transition-all-custom cursor-pointer ${
                       capacityWarning
                         ? 'bg-[#283945] text-[#9ea1a3] cursor-not-allowed'
                         : 'bg-[#4ff7d1] hover:bg-[#3ee0be] text-[#0d1318]'
@@ -495,7 +495,7 @@ export default function Trips() {
                   <button
                     type="button"
                     onClick={handleResetForm}
-                    className="flex-1 bg-transparent border border-[#283945] hover:bg-[#283945] text-[#ffffff] py-3 rounded-full font-semibold text-center cursor-pointer transition-all duration-150"
+                    className="flex-1 bg-transparent border border-[#283945] hover:bg-[#283945] text-[#ffffff] py-3.5 rounded-full font-bold text-sm text-center cursor-pointer transition-all duration-150"
                   >
                     Cancel
                   </button>

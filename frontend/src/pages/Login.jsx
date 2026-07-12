@@ -8,6 +8,7 @@ export default function Login() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [shake, setShake] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -137,9 +138,10 @@ export default function Login() {
   };
 
   // Demo Helper Quick Select
-  const handleDemoClick = (demEmail) => {
+  const handleDemoClick = (demEmail, demRole) => {
     setEmail(demEmail);
     setPassword('admin123');
+    setRole(demRole);
     setShowDemo(false);
     setEmailError('');
     setPasswordError('');

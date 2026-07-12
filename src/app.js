@@ -1,0 +1,67 @@
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const compression = require('compression');
+const env = require('./config/env');
+const dbPool = require('./config/database');
+
+const loggerMiddleware = require('./middleware/logger.middleware');
+const errorHandler = require('./middleware/error.middleware');
+const authRoutes = require('./auth/auth.routes');
+const regionRoutes = require('./modules/regions/region.routes');
+const vtRoutes = require('./modules/vehicle-types/vehicle-type.routes');
+const lcRoutes = require('./modules/license-categories/license-category.routes');
+const vehicleRoutes = require('./modules/vehicles/vehicle.routes');
+const driverRoutes = require('./modules/drivers/driver.routes');
+const profileRoutes = require('./modules/profiles/profile.routes');
+
+const app = express();
+
+// Global Middleware
+app.use(helmet());
+app.use(cors());
+app.use(compression());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Request Logger
+app.use(loggerMiddleware);
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/regions', regionRoutes);
+app.use('/api/vehicle-types', vtRoutes);
+app.use('/api/license-categories', lcRoutes);
+app.use('/api/vehicles', vehicleRoutes);
+app.use('/api/drivers', driverRoutes);
+app.use('/api/profiles', profileRoutes);
+
+// Health Check
+app.get('/health', async (req, res) => {
+  try {
+    const dbResult = await dbPool.query('SELECT 1');
+    res.json({
+      success: true,
+      status: 'UP',
+      dbConnected: dbResult.rowCount === 1,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      status: 'DOWN',
+      message: error.message
+    });
+  }
+});
+
+// Error Handler Middleware (must be registered last)
+app.use(errorHandler);
+
+if (require.main === module) {
+  app.listen(env.port, () => {
+    console.log(`Server running in ${env.nodeEnv} mode on port ${env.port}`);
+  });
+}
+
+module.exports = app;

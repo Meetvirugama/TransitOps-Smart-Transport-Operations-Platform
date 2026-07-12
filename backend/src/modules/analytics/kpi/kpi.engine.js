@@ -76,21 +76,27 @@ const getFinancialMetrics = async () => {
     SELECT 
       COALESCE((SELECT SUM(amount) FROM revenues WHERE is_deleted = false), 0) as global_revenue,
       COALESCE((SELECT SUM(total_cost) FROM fuel_logs WHERE is_deleted = false), 0) as global_fuel,
+      COALESCE((SELECT SUM(quantity) FROM fuel_logs WHERE is_deleted = false), 0) as global_fuel_liters,
       COALESCE((SELECT SUM(amount) FROM expenses WHERE is_deleted = false), 0) as global_expenses,
-      COALESCE((SELECT SUM(actual_cost) FROM maintenance_records WHERE status = 'Completed' AND is_deleted = false), 0) as global_maintenance
+      COALESCE((SELECT SUM(actual_cost) FROM maintenance_records WHERE status = 'Completed' AND is_deleted = false), 0) as global_maintenance,
+      COALESCE((SELECT SUM(planned_distance) FROM trips WHERE status = 'Completed' AND is_deleted = false), 0) as global_distance
   `;
   const { rows } = await dbPool.query(query);
   
   const revenue = Number(rows[0].global_revenue);
   const fuel = Number(rows[0].global_fuel);
+  const fuelLiters = Number(rows[0].global_fuel_liters);
   const expenses = Number(rows[0].global_expenses);
   const maintenance = Number(rows[0].global_maintenance);
+  const distance = Number(rows[0].global_distance);
   const totalCost = fuel + expenses + maintenance;
 
   return {
     revenue,
     totalCost,
     fuelCost: fuel,
+    fuelLiters,
+    distance,
     maintenanceCost: maintenance,
     otherExpenses: expenses,
     profit: revenue - totalCost

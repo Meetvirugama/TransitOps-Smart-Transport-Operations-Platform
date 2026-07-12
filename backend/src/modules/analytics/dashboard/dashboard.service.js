@@ -15,6 +15,11 @@ const getDashboardSummary = async (filters = {}) => {
     fleetUtilization = (vehicles.onTrip / vehicles.total) * 100;
   }
 
+  let avgFuelEfficiency = 0;
+  if (financials.fuelLiters > 0 && financials.distance > 0) {
+    avgFuelEfficiency = financials.distance / financials.fuelLiters;
+  }
+
   return {
     vehicles,
     trips,
@@ -27,7 +32,8 @@ const getDashboardSummary = async (filters = {}) => {
         : 0,
       tripCompletionRate: trips.total > 0
         ? Number(((trips.completed / trips.total) * 100).toFixed(2))
-        : 0
+        : 0,
+      avgFuelEfficiency: Number(avgFuelEfficiency.toFixed(2))
     }
   };
 };

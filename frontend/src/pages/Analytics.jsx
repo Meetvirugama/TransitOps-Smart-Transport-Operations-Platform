@@ -47,11 +47,11 @@ export default function Analytics() {
   }
 
   const kpiCards = [
-    { label: 'Total Trips',        value: fmt(summary?.totalTrips),        icon: Route,       color: '#3b82f6' },
-    { label: 'Total Distance (km)',value: fmt(summary?.totalDistanceKm),   icon: TrendingUp,  color: '#4ff7d1' },
-    { label: 'Total Fuel (L)',     value: fmtDec(summary?.totalFuelLiters),icon: Fuel,        color: '#eab308' },
-    { label: 'Total Revenue (₹)', value: '₹'+fmt(summary?.totalRevenue),  icon: DollarSign,  color: '#22c55e' },
-    { label: 'Avg Fuel Efficiency',value: fmtDec(summary?.avgFuelEfficiency)+' km/L', icon: Fuel, color: '#a855f7' },
+    { label: 'Total Trips',        value: fmt(summary?.trips?.total),        icon: Route,       color: '#3b82f6' },
+    { label: 'Total Distance (km)',value: fmt(summary?.financials?.distance),   icon: TrendingUp,  color: '#4ff7d1' },
+    { label: 'Total Fuel (L)',     value: fmtDec(summary?.financials?.fuelLiters),icon: Fuel,        color: '#eab308' },
+    { label: 'Total Revenue (₹)', value: '₹'+fmt(summary?.financials?.revenue),  icon: DollarSign,  color: '#22c55e' },
+    { label: 'Avg Fuel Efficiency',value: fmtDec(summary?.kpis?.avgFuelEfficiency)+' km/L', icon: Fuel, color: '#a855f7' },
   ];
 
   return (

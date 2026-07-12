@@ -27,6 +27,7 @@ const analyticsRoutes = require('./modules/analytics/dashboard/dashboard.routes'
 const reportsRoutes = require('./modules/analytics/exports/reports.routes');
 const rolesRoutes = require('./modules/roles/roles.routes');
 const usersRoutes = require('./modules/users/users.routes');
+const aiRoutes = require('./modules/ai/ai.routes');
 
 const app = express();
 
@@ -69,6 +70,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/settings/roles', rolesRoutes);
 app.use('/api/settings/users', usersRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health Check
 app.get('/health', async (req, res) => {

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../config/api';
+import WeatherAlert from '../components/WeatherAlert';
+import OperationsBrief from '../components/OperationsBrief';
 
 export default function Dashboard() {
   const [vehicleType, setVehicleType] = useState('All');
@@ -8,6 +10,31 @@ export default function Dashboard() {
   
   const [vehicleTypesList, setVehicleTypesList] = useState([]);
   const [regionsList, setRegionsList] = useState([]);
+<<<<<<< HEAD
+  const [loading, setLoading] = useState(true);
+
+  const [vehicles, setVehicles] = useState([]);
+  const [trips, setTrips] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+
+  const [aiInsight, setAiInsight] = useState(null);
+  const [insightLoading, setInsightLoading] = useState(true);
+
+  const fetchAiInsight = async () => {
+    setInsightLoading(true);
+    try {
+      const res = await api.get('/ai/maintenance-insights');
+      if (res.success) {
+        setAiInsight(res.data.insight);
+      }
+    } catch (err) {
+      console.error('Failed to fetch AI insight', err);
+      setAiInsight('• Could not load AI insights at this time.\n• Ensure Gemini API key is configured in backend/.env\n• Get a free key at aistudio.google.com');
+    } finally {
+      setInsightLoading(false);
+    }
+  };
+=======
   
   const [loading, setLoading] = useState(true);
 
@@ -149,6 +176,143 @@ export default function Dashboard() {
       accent: '#4ff7d1',
     },
   ];
+>>>>>>> b9f7831ee0ad7992892d808435e3bd0085ca6733
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [vehRes, tripRes, drivRes, regRes, typeRes] = await Promise.all([
+          api.get('/vehicles'),
+          api.get('/trips'),
+          api.get('/drivers'),
+          api.get('/regions'),
+          api.get('/vehicle-types')
+        ]);
+        
+        setVehicles(vehRes.data || []);
+        setTrips(tripRes.data || []);
+        setDrivers(drivRes.data || []);
+        
+        const rList = (regRes.data || []).map(r => r.name);
+        const tList = (typeRes.data || []).map(t => t.name);
+        setRegionsList(['All', ...rList]);
+        setVehicleTypesList(['All', ...tList]);
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+    fetchAiInsight();
+  }, []);
+
+  const filteredVehicles = useMemo(() => {
+    return vehicles.filter(v => {
+      const matchType   = vehicleType   === 'All' || v.vehicle_type_name === vehicleType;
+      const matchStatus = statusFilter  === 'All' || v.status === statusFilter;
+      const matchRegion = regionFilter  === 'All' || v.region_name === regionFilter;
+      return matchType && matchStatus && matchRegion;
+    });
+  }, [vehicles, vehicleType, statusFilter, regionFilter]);
+
+  const kpis = useMemo(() => {
+    const activeCount    = filteredVehicles.filter(v => v.status === 'On Trip').length;
+    const availableCount = filteredVehicles.filter(v => v.status === 'Available').length;
+    const inShopCount    = filteredVehicles.filter(v => v.status === 'In Shop').length;
+    const retiredCount   = filteredVehicles.filter(v => v.status === 'Retired').length;
+
+    const activeTripsCount = trips.filter(t => {
+      if (statusFilter !== 'All' && statusFilter !== 'On Trip') return false;
+      const vehObj = vehicles.find(v => v.registration_number === t.registration_number);
+      if (!vehObj) return true;
+      const matchType   = vehicleType  === 'All' || vehObj.vehicle_type_name   === vehicleType;
+      const matchRegion = regionFilter === 'All' || vehObj.region_name === regionFilter;
+      return matchType && matchRegion && t.status === 'Dispatched';
+    }).length;
+
+    const pendingTripsCount = trips.filter(t => t.status === 'Draft').length;
+    const driversOnDuty     = drivers.filter(d => d.status === 'Available' || d.status === 'On Trip').length;
+    const totalVehicles     = filteredVehicles.length;
+    const utilizationPct    = totalVehicles > 0 ? Math.round((activeCount / totalVehicles) * 100) : 0;
+
+    return { activeCount, availableCount, inShopCount, retiredCount, activeTripsCount, pendingTripsCount, driversOnDuty, utilizationPct, totalVehicles: totalVehicles || 1 };
+  }, [filteredVehicles, trips, drivers, vehicles, vehicleType, statusFilter, regionFilter]);
+
+  const recentTrips = useMemo(() => [...trips].reverse().slice(0, 5), [trips]);
+
+  const kpiCards = [
+    {
+      title: 'Active Vehicles',
+      val: kpis.activeCount,
+      sub: 'On Trip Now',
+      dotColor: '#c5cace',
+      borderColor: 'transparent',
+      glowColor: 'transparent',
+      pulse: false,
+      accent: '#ffffff',
+    },
+    {
+      title: 'Available Vehicles',
+      val: kpis.availableCount,
+      sub: 'Ready to Dispatch',
+      dotColor: '#4ff7d1',
+      borderColor: 'rgba(79,247,209,0.25)',
+      glowColor: 'rgba(79,247,209,0.12)',
+      pulse: true,
+      accent: '#4ff7d1',
+    },
+    {
+      title: 'In Maintenance',
+      val: kpis.inShopCount,
+      sub: 'In Shop / Repair',
+      dotColor: '#a21caf',
+      borderColor: 'rgba(162,28,175,0.3)',
+      glowColor: 'rgba(162,28,175,0.1)',
+      pulse: false,
+      accent: '#a21caf',
+    },
+    {
+      title: 'Active Trips',
+      val: kpis.activeTripsCount,
+      sub: 'Dispatched',
+      dotColor: '#4ff7d1',
+      borderColor: 'rgba(79,247,209,0.25)',
+      glowColor: 'rgba(79,247,209,0.12)',
+      pulse: true,
+      accent: '#4ff7d1',
+    },
+    {
+      title: 'Pending Trips',
+      val: kpis.pendingTripsCount,
+      sub: 'Draft / Queued',
+      dotColor: '#86898c',
+      borderColor: 'transparent',
+      glowColor: 'transparent',
+      pulse: false,
+      accent: '#ffffff',
+    },
+    {
+      title: 'Drivers On Duty',
+      val: kpis.driversOnDuty,
+      sub: 'Active Personnel',
+      dotColor: '#c5cace',
+      borderColor: 'transparent',
+      glowColor: 'transparent',
+      pulse: false,
+      accent: '#ffffff',
+    },
+    {
+      title: 'Fleet Utilization',
+      val: `${kpis.utilizationPct}%`,
+      sub: 'Active / Total',
+      dotColor: '#4ff7d1',
+      borderColor: 'rgba(79,247,209,0.25)',
+      glowColor: 'rgba(79,247,209,0.12)',
+      pulse: true,
+      accent: '#4ff7d1',
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-7 select-none animate-page-fade">
@@ -164,6 +328,9 @@ export default function Dashboard() {
           <span className="font-mono text-[10px] text-[#4ff7d1] font-bold tracking-wider uppercase">Live</span>
         </div>
       </div>
+
+      {/* Weather Alert Banner */}
+      <WeatherAlert />
 
       {/* Dashboard Filters */}
       <div className="flex gap-3 flex-wrap items-center">
@@ -213,7 +380,11 @@ export default function Dashboard() {
             <div className="flex justify-between items-start">
               <span
                 className="font-mono text-[9px] font-bold tracking-widest uppercase leading-tight"
+<<<<<<< HEAD
+                style={{ color: '#86898c' }}
+=======
                 style={{ color: c.accent === '#4ff7d1' ? '#86898c' : '#86898c' }}
+>>>>>>> b9f7831ee0ad7992892d808435e3bd0085ca6733
               >
                 {c.title}
               </span>
@@ -382,6 +553,46 @@ export default function Dashboard() {
         </div>
 
       </div>
+
+      {/* AI Maintenance Insights */}
+      <div className="bg-[#111820] border border-[#1e2d38] rounded-xl p-6 flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#4ff7d1]/10 border border-[#4ff7d1]/20 flex items-center justify-center text-sm">
+              🤖
+            </div>
+            <div>
+              <h3 className="font-heading text-sm font-semibold text-white">AI Maintenance Insights</h3>
+              <p className="text-[10px] font-mono text-[#86898c] mt-0.5">Powered by Gemini — analyzes your top vehicles</p>
+            </div>
+          </div>
+          <button
+            onClick={fetchAiInsight}
+            disabled={insightLoading}
+            className="text-[10px] font-mono text-[#86898c] hover:text-white border border-[#1e2d38] hover:border-[#4ff7d1]/30 rounded-md px-2.5 py-1 transition-all disabled:opacity-50 cursor-pointer"
+          >
+            {insightLoading ? 'Analyzing...' : '↻ Refresh'}
+          </button>
+        </div>
+
+        {insightLoading ? (
+          <div className="flex items-center gap-3 text-[#86898c]">
+            <div className="flex gap-1">
+              {[0, 1, 2].map(i => (
+                <span key={i} className="w-1.5 h-1.5 rounded-full bg-[#4ff7d1]/50 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+              ))}
+            </div>
+            <span className="text-xs">Gemini is analyzing vehicle data...</span>
+          </div>
+        ) : (
+          <div className="text-xs text-white leading-relaxed whitespace-pre-wrap font-sans border-l-2 border-[#4ff7d1]/40 pl-4 py-1">
+            {aiInsight || 'No insights available yet. Ensure vehicles and maintenance records exist in the database.'}
+          </div>
+        )}
+      </div>
+
+      {/* Dual-AI Operations Intelligence Brief */}
+      <OperationsBrief />
     </div>
   );
 }

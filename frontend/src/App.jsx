@@ -10,6 +10,7 @@ import Maintenance from './pages/Maintenance';
 import FuelExpenses from './pages/FuelExpenses';
 import Settings from './pages/Settings';
 import Header from './components/Header';
+import AIChatbot from './components/AIChatbot';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
@@ -20,11 +21,12 @@ const ProtectedRoute = ({ children }) => {
 // Main Layout Wrapper
 const Layout = ({ children }) => {
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#0d1318] text-[#ffffff] overflow-hidden font-sans">
+    <div className="flex flex-col h-screen w-screen bg-[#0d1318] text-[#ffffff] overflow-hidden font-sans relative">
       <Header />
       <main className="flex-1 overflow-y-auto p-8">
         {children}
       </main>
+      <AIChatbot />
     </div>
   );
 };

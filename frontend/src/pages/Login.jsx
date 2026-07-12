@@ -35,10 +35,11 @@ export default function Login() {
     if (!selectedRole) return;
 
     const roleCredentials = {
-      'Fleet Manager': { email: 'manager@transitops.in', password: 'admin123' },
-      'Dispatcher': { email: 'dispatcher@transitops.in', password: 'admin123' },
-      'Safety Officer': { email: 'safety@transitops.in', password: 'admin123' },
-      'Financial Analyst': { email: 'finance@transitops.in', password: 'admin123' }
+      'Admin':            { email: 'admin@transitops.in',      password: 'admin123'      },
+      'Fleet Manager':   { email: 'manager@transitops.in',    password: 'manager123'    },
+      'Dispatcher':      { email: 'dispatcher@transitops.in', password: 'dispatcher123' },
+      'Safety Officer':  { email: 'safety@transitops.in',     password: 'safety123'     },
+      'Financial Analyst':{ email: 'finance@transitops.in',   password: 'finance123'    }
     };
 
     const creds = roleCredentials[selectedRole];
@@ -290,6 +291,7 @@ export default function Login() {
                 required
               >
                 <option value="" disabled>Select demo context...</option>
+                <option value="Admin">Admin</option>
                 <option value="Fleet Manager">Fleet Manager</option>
                 <option value="Dispatcher">Dispatcher</option>
                 <option value="Safety Officer">Safety Officer</option>

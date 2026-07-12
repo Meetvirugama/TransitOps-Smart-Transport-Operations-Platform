@@ -68,8 +68,9 @@ export const AuthProvider = ({ children }) => {
       const sessionUser = {
         id: matchedUser.id,
         email: matchedUser.email,
-        name: matchedUser.name || matchedUser.email.split('@')[0], // Backend currently doesn't store 'name'
+        name: matchedUser.name || matchedUser.email.split('@')[0],
         role: matchedUser.role,
+        permissions: matchedUser.permissions || {},
         loggedInAt: new Date().toISOString()
       };
 

@@ -1,7 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { mockDb } from '../db/mockDb';
 import { LayoutDashboard, Truck, Users, Route, Wrench, Fuel, BarChart3 } from 'lucide-react';
 
 const menuItems = [
@@ -60,8 +59,7 @@ export default function Header() {
   };
 
   const handleResetDb = () => {
-    if (window.confirm('Reset all data to default Indian seed values? You will be logged out.')) {
-      mockDb.resetDatabase();
+    if (window.confirm('This will log you out. Reset your local session?')) {
       logout();
       navigate('/login');
     }

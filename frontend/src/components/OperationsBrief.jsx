@@ -120,9 +120,9 @@ export default function OperationsBrief() {
     try {
       // Simulate pipeline stages visually
       setTimeout(() => setStage(2), 2500);
-      const { data } = await api.get('/api/ai/operations-brief');
+      const { data } = await api.get('/ai/operations-brief');
       setStage(3);
-      setBrief(data.data);
+      setBrief(data); // 'data' is the response data, which might have { success: true, data: ... }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to generate brief. Check your API keys and try again.');
       setStage(0);

@@ -7,7 +7,7 @@ const { ROLES } = require('../../../common/constants');
 const router = express.Router();
 
 router.use(authMiddleware);
-router.use(roleMiddleware(ROLES.ADMIN, ROLES.FLEET_MANAGER, ROLES.SAFETY_OFFICER));
+// All authenticated users can view analytics
 
 // Dashboard — supports ?region_id=1&vehicle_type_id=2
 router.get('/dashboard', dashboardController.getDashboardSummary);

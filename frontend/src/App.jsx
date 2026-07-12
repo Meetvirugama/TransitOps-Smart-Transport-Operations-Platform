@@ -6,8 +6,12 @@ import Dashboard from './pages/Dashboard';
 import Fleet from './pages/Fleet';
 import Drivers from './pages/Drivers';
 import Trips from './pages/Trips';
+import Maintenance from './pages/Maintenance';
+import FuelExpenses from './pages/FuelExpenses';
+import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import Header from './components/Header';
+import AIChatbot from './components/AIChatbot';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
@@ -23,6 +27,7 @@ const Layout = ({ children }) => {
       <main className="flex-1 overflow-y-auto p-8">
         {children}
       </main>
+      <AIChatbot />
     </div>
   );
 };
@@ -74,14 +79,10 @@ function AppRoutes() {
         </ProtectedRoute>
       } />
 
-      {/* Placeholders */}
       <Route path="/maintenance" element={
         <ProtectedRoute>
           <Layout>
-            <Placeholder
-              title="5. Maintenance Log"
-              desc="Assign vehicles to shop, review repair history, and track scheduling tasks."
-            />
+            <Maintenance />
           </Layout>
         </ProtectedRoute>
       } />
@@ -89,10 +90,7 @@ function AppRoutes() {
       <Route path="/fuel-expenses" element={
         <ProtectedRoute>
           <Layout>
-            <Placeholder 
-              title="6. Fuel & Expenses" 
-              desc="Record fuel fills, toll fees, maintenance invoices, and track operational expenditure." 
-            />
+            <FuelExpenses />
           </Layout>
         </ProtectedRoute>
       } />
@@ -100,10 +98,7 @@ function AppRoutes() {
       <Route path="/analytics" element={
         <ProtectedRoute>
           <Layout>
-            <Placeholder
-              title="7. Analytics Reports"
-              desc="Observe distance metrics, calculate exact vehicle ROI, track fuel efficiencies, and export data spreadsheets."
-            />
+            <Analytics />
           </Layout>
         </ProtectedRoute>
       } />

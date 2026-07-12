@@ -1,11 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockDb } from '../db/mockDb';
+import api from '../config/api';
 import {
   Truck, Users, Route, Wrench, Fuel, TrendingUp,
   Clock, ChevronRight, AlertTriangle, CheckCircle2,
   Activity, Zap
 } from 'lucide-react';
+import OperationsBrief from '../components/OperationsBrief';
 
 /* ─── helpers ─────────────────────────────────────────── */
 function fmt(n) { return n?.toLocaleString('en-IN') ?? '0'; }
@@ -95,11 +96,27 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [regionFilter, setRegionFilter] = useState('All');
 
-  const vehicles    = useMemo(() => mockDb.getVehicles(), []);
-  const trips       = useMemo(() => mockDb.getTrips(), []);
-  const drivers     = useMemo(() => mockDb.getDrivers(), []);
-  const maintenance = useMemo(() => mockDb.getMaintenance(), []);
-  const fuelLogs    = useMemo(() => mockDb.getFuelLogs(), []);
+  const [vehicles,    setVehicles]    = useState([]);
+  const [trips,       setTrips]       = useState([]);
+  const [drivers,     setDrivers]     = useState([]);
+  const [maintenance, setMaintenance] = useState([]);
+  const [fuelLogs,    setFuelLogs]    = useState([]);
+
+  useEffect(() => {
+    Promise.all([
+      api.get('/vehicles',      { params: { limit: 200 } }),
+      api.get('/trips',         { params: { limit: 200 } }),
+      api.get('/drivers',       { params: { limit: 200 } }),
+      api.get('/maintenance',   { params: { limit: 200 } }),
+      api.get('/fuel-logs',     { params: { limit: 200 } }),
+    ]).then(([veh, trp, drv, maint, fuel]) => {
+      if (veh.success)   setVehicles(veh.data || []);
+      if (trp.success)   setTrips(trp.data || []);
+      if (drv.success)   setDrivers(drv.data || []);
+      if (maint.success) setMaintenance(maint.data || []);
+      if (fuel.success)  setFuelLogs(fuel.data || []);
+    }).catch(err => console.error('Dashboard fetch error', err));
+  }, []);
 
   const filteredVehicles = useMemo(() => vehicles.filter(v => {
     const matchType   = vehicleType  === 'All' || v.type   === vehicleType;
@@ -407,6 +424,9 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* ── Operations Brief AI Component ── */}
+      <OperationsBrief />
 
       {/* ── 3. Bottom Grid Layout: Trips | Fleet Status | Activity ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-2">

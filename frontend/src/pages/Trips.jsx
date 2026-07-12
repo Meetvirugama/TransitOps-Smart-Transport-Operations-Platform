@@ -404,7 +404,7 @@ export default function Trips() {
                     <option value="" disabled>Select driver...</option>
                     {availableDrivers.map(d => (
                       <option key={d.id} value={d.id}>
-                        {d.name} ({d.license_category ? d.license_category.name : 'Unknown'})
+                        {d.full_name} ({d.license_category_name ? d.license_category_name : 'Unknown'})
                       </option>
                     ))}
                   </select>
@@ -525,7 +525,7 @@ export default function Trips() {
                   >
                     <div className="flex justify-between items-center text-xs">
                       <span className="font-mono font-bold text-[#ffffff]">{t.id}</span>
-                      <span className="font-medium text-dark-muted font-mono text-[10px]">{t.vehicle ? `${t.vehicle} / ${t.driver}` : 'Unassigned'}</span>
+                      <span className="font-medium text-dark-muted font-mono text-[10px]">{t.registration_number ? `${t.registration_number} / ${t.driver_name}` : 'Unassigned'}</span>
                     </div>
                     <div className="text-xs font-semibold text-[#ffffff] leading-tight">{t.source} &rarr; {t.destination}</div>
                     <div className="flex justify-between items-center pt-1 mt-0.5">

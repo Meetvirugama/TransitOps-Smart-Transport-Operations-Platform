@@ -222,16 +222,16 @@ export default function Fleet() {
 
             return (
               <div
-                key={v.registrationNumber}
+                key={v.id || v.registration_number}
                 className={`glass-table-row grid items-center px-5 py-4 rounded-xl border bg-[#121b1f]/80 backdrop-blur-sm transition-all duration-300 hover:bg-[#162129]/90 hover:shadow-[0_0_18px_rgba(79,247,209,0.06)] ${glowBorder}`}
                 style={{ gridTemplateColumns: '1.5fr 1.4fr 0.65fr 0.75fr 1fr 1fr 1fr 160px', gap: '1rem', animationDelay: `${idx * 40}ms` }}
               >
-                <span className="font-mono font-bold text-[#ffffff] text-xs tracking-wide">{v.registrationNumber}</span>
+                <span className="font-mono font-bold text-[#ffffff] text-xs tracking-wide">{v.registration_number}</span>
                 <span className="text-[#c5cace] text-xs">{v.name}</span>
-                <span className="text-[#86898c] text-xs">{v.type}</span>
-                <span className="text-[#c5cace] text-xs">{v.maxCapacity} kg</span>
+                <span className="text-[#86898c] text-xs">{v.vehicle_type ? v.vehicle_type.name : v.type}</span>
+                <span className="text-[#c5cace] text-xs">{v.max_capacity} kg</span>
                 <span className="font-mono text-[#c5cace] text-xs">{v.odometer.toLocaleString()} km</span>
-                <span className="font-mono text-[#c5cace] text-xs">&#8377;{v.acquisitionCost.toLocaleString('en-IN')}</span>
+                <span className="font-mono text-[#c5cace] text-xs">&#8377;{v.acquisition_cost.toLocaleString('en-IN')}</span>
                 <span className={`inline-flex w-fit px-2.5 py-0.5 rounded-full border text-[9px] font-bold uppercase tracking-wider ${pillColor}`}>
                   {v.status}
                 </span>
@@ -243,7 +243,7 @@ export default function Fleet() {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDelete(v.registrationNumber)}
+                    onClick={() => handleDelete(v.id, v.registration_number)}
                     className="btn-delete bg-transparent border border-[#1e2d38] px-4 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all duration-200 whitespace-nowrap"
                   >
                     Delete

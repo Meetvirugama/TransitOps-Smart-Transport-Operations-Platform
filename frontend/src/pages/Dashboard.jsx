@@ -10,6 +10,7 @@ export default function Dashboard() {
   
   const [vehicleTypesList, setVehicleTypesList] = useState([]);
   const [regionsList, setRegionsList] = useState([]);
+<<<<<<< HEAD
   const [loading, setLoading] = useState(true);
 
   const [vehicles, setVehicles] = useState([]);
@@ -33,6 +34,149 @@ export default function Dashboard() {
       setInsightLoading(false);
     }
   };
+=======
+  
+  const [loading, setLoading] = useState(true);
+
+  const [vehicles, setVehicles] = useState([]);
+  const [trips, setTrips] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [vehRes, tripRes, drivRes, regRes, typeRes] = await Promise.all([
+          api.get('/vehicles'),
+          api.get('/trips'),
+          api.get('/drivers'),
+          api.get('/regions'),
+          api.get('/vehicle-types')
+        ]);
+        
+        setVehicles(vehRes.data || []);
+        setTrips(tripRes.data || []);
+        setDrivers(drivRes.data || []);
+        
+        const rList = (regRes.data || []).map(r => r.name);
+        const tList = (typeRes.data || []).map(t => t.name);
+        setRegionsList(['All', ...rList]);
+        setVehicleTypesList(['All', ...tList]);
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const filteredVehicles = useMemo(() => {
+    return vehicles.filter(v => {
+      const matchType   = vehicleType   === 'All' || v.vehicle_type_name === vehicleType;
+      const matchStatus = statusFilter  === 'All' || v.status === statusFilter;
+      const matchRegion = regionFilter  === 'All' || v.region_name === regionFilter;
+      return matchType && matchStatus && matchRegion;
+    });
+  }, [vehicles, vehicleType, statusFilter, regionFilter]);
+
+  const kpis = useMemo(() => {
+    const activeCount    = filteredVehicles.filter(v => v.status === 'On Trip').length;
+    const availableCount = filteredVehicles.filter(v => v.status === 'Available').length;
+    const inShopCount    = filteredVehicles.filter(v => v.status === 'In Shop').length;
+    const retiredCount   = filteredVehicles.filter(v => v.status === 'Retired').length;
+
+    const activeTripsCount = trips.filter(t => {
+      if (statusFilter !== 'All' && statusFilter !== 'On Trip') return false;
+      const vehObj = vehicles.find(v => v.registration_number === t.registration_number);
+      if (!vehObj) return true;
+      const matchType   = vehicleType  === 'All' || vehObj.vehicle_type_name   === vehicleType;
+      const matchRegion = regionFilter === 'All' || vehObj.region_name === regionFilter;
+      return matchType && matchRegion && t.status === 'Dispatched';
+    }).length;
+
+    const pendingTripsCount = trips.filter(t => t.status === 'Draft').length;
+    const driversOnDuty     = drivers.filter(d => d.status === 'Available' || d.status === 'On Trip').length;
+    const totalVehicles     = filteredVehicles.length;
+    const utilizationPct    = totalVehicles > 0 ? Math.round((activeCount / totalVehicles) * 100) : 0;
+
+    return { activeCount, availableCount, inShopCount, retiredCount, activeTripsCount, pendingTripsCount, driversOnDuty, utilizationPct, totalVehicles: totalVehicles || 1 };
+  }, [filteredVehicles, trips, drivers, vehicles, vehicleType, statusFilter, regionFilter]);
+
+  const recentTrips = useMemo(() => [...trips].reverse().slice(0, 5), [trips]);
+
+  const kpiCards = [
+    {
+      title: 'Active Vehicles',
+      val: kpis.activeCount,
+      sub: 'On Trip Now',
+      dotColor: '#c5cace',
+      borderColor: 'transparent',
+      glowColor: 'transparent',
+      pulse: false,
+      accent: '#ffffff',
+    },
+    {
+      title: 'Available Vehicles',
+      val: kpis.availableCount,
+      sub: 'Ready to Dispatch',
+      dotColor: '#4ff7d1',
+      borderColor: 'rgba(79,247,209,0.25)',
+      glowColor: 'rgba(79,247,209,0.12)',
+      pulse: true,
+      accent: '#4ff7d1',
+    },
+    {
+      title: 'In Maintenance',
+      val: kpis.inShopCount,
+      sub: 'In Shop / Repair',
+      dotColor: '#a21caf',
+      borderColor: 'rgba(162,28,175,0.3)',
+      glowColor: 'rgba(162,28,175,0.1)',
+      pulse: false,
+      accent: '#a21caf',
+    },
+    {
+      title: 'Active Trips',
+      val: kpis.activeTripsCount,
+      sub: 'Dispatched',
+      dotColor: '#4ff7d1',
+      borderColor: 'rgba(79,247,209,0.25)',
+      glowColor: 'rgba(79,247,209,0.12)',
+      pulse: true,
+      accent: '#4ff7d1',
+    },
+    {
+      title: 'Pending Trips',
+      val: kpis.pendingTripsCount,
+      sub: 'Draft / Queued',
+      dotColor: '#86898c',
+      borderColor: 'transparent',
+      glowColor: 'transparent',
+      pulse: false,
+      accent: '#ffffff',
+    },
+    {
+      title: 'Drivers On Duty',
+      val: kpis.driversOnDuty,
+      sub: 'Active Personnel',
+      dotColor: '#c5cace',
+      borderColor: 'transparent',
+      glowColor: 'transparent',
+      pulse: false,
+      accent: '#ffffff',
+    },
+    {
+      title: 'Fleet Utilization',
+      val: `${kpis.utilizationPct}%`,
+      sub: 'Active / Total',
+      dotColor: '#4ff7d1',
+      borderColor: 'rgba(79,247,209,0.25)',
+      glowColor: 'rgba(79,247,209,0.12)',
+      pulse: true,
+      accent: '#4ff7d1',
+    },
+  ];
+>>>>>>> b9f7831ee0ad7992892d808435e3bd0085ca6733
 
   useEffect(() => {
     const fetchData = async () => {
@@ -236,7 +380,11 @@ export default function Dashboard() {
             <div className="flex justify-between items-start">
               <span
                 className="font-mono text-[9px] font-bold tracking-widest uppercase leading-tight"
+<<<<<<< HEAD
                 style={{ color: '#86898c' }}
+=======
+                style={{ color: c.accent === '#4ff7d1' ? '#86898c' : '#86898c' }}
+>>>>>>> b9f7831ee0ad7992892d808435e3bd0085ca6733
               >
                 {c.title}
               </span>

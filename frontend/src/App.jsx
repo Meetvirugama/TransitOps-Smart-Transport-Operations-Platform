@@ -20,12 +20,19 @@ const ProtectedRoute = ({ children }) => {
 // Main Layout Wrapper
 const Layout = ({ children }) => {
   return (
+<<<<<<< HEAD
     <div className="flex flex-col h-screen w-screen bg-[#0d1318] text-[#ffffff] overflow-hidden font-sans relative">
+=======
+    <div className="flex flex-col h-screen w-screen bg-[#0d1318] text-[#ffffff] overflow-hidden font-sans">
+>>>>>>> b9f7831ee0ad7992892d808435e3bd0085ca6733
       <Header />
       <main className="flex-1 overflow-y-auto p-8">
         {children}
       </main>
+<<<<<<< HEAD
       <AIChatbot />
+=======
+>>>>>>> b9f7831ee0ad7992892d808435e3bd0085ca6733
     </div>
   );
 };

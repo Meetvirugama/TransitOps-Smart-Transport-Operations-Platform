@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../config/api';
 import Modal from '../components/Modal';
+import { useAuth } from '../context/AuthContext';
 
 export default function Drivers() {
   const [drivers, setDrivers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStatusFilter, setActiveStatusFilter] = useState('All');
   const [categoriesList, setCategoriesList] = useState([]);
+  const { user } = useAuth();
+  
+  const canModify = user?.role === 'Admin' || user?.role === 'Fleet Manager' || user?.role === 'Safety Officer';
 
   const fetchDrivers = async () => {
     try {
@@ -164,12 +168,14 @@ export default function Drivers() {
           </div>
         </div>
 
-        <button 
-          onClick={handleOpenAddModal}
-          className="bg-[#4ff7d1] hover:bg-[#3ee0be] text-[#0d1318] border-none px-4 py-2.5 rounded-full text-sm font-semibold cursor-pointer transition-all-custom hover:scale-[1.02]"
-        >
-          + Add Driver
-        </button>
+        {canModify && (
+          <button 
+            onClick={handleOpenAddModal}
+            className="bg-[#4ff7d1] hover:bg-[#3ee0be] text-[#0d1318] border-none px-4 py-2.5 rounded-full text-sm font-semibold cursor-pointer transition-all-custom hover:scale-[1.02]"
+          >
+            + Add Driver
+          </button>
+        )}
       </div>
 
       {/* Drivers Profiles — Glassmorphic card rows */}
@@ -177,7 +183,7 @@ export default function Drivers() {
         {/* Header row — must match data row grid exactly */}
         <div
           className="grid items-center px-5 pb-2.5 border-b border-dark-border font-mono text-[10px] text-[#86898c] uppercase font-bold tracking-widest"
-          style={{ gridTemplateColumns: '1.3fr 1.2fr 0.55fr 0.65fr 1fr 0.55fr 0.85fr 1.1fr 160px', gap: '1rem' }}
+          style={{ gridTemplateColumns: `1.5fr 1.2fr 0.8fr 1fr 1fr 0.8fr 1fr ${canModify ? '160px' : ''}`, gap: '1rem' }}
         >
           <span>Driver</span>
           <span>License No.</span>
@@ -187,7 +193,7 @@ export default function Drivers() {
           <span>Compl.</span>
           <span>Safety</span>
           <span>Status</span>
-          <span>Actions</span>
+          {canModify && <span>Actions</span>}
         </div>
 
         {filteredDrivers.length === 0 ? (
@@ -220,9 +226,9 @@ export default function Drivers() {
 
             return (
               <div
-                key={index}
+                key={d.id || index}
                 className={`glass-table-row grid items-center px-5 py-4 rounded-xl border bg-[#121b1f]/80 backdrop-blur-sm transition-all duration-300 hover:bg-[#162129]/90 hover:shadow-[0_0_18px_rgba(79,247,209,0.06)] ${glowBorder}`}
-                style={{ gridTemplateColumns: '1.3fr 1.2fr 0.55fr 0.65fr 1fr 0.55fr 0.85fr 1.1fr 160px', gap: '1rem', animationDelay: `${index * 40}ms` }}
+                style={{ gridTemplateColumns: `1.5fr 1.2fr 0.8fr 1fr 1fr 0.8fr 1fr ${canModify ? '160px' : ''}`, gap: '1rem', animationDelay: `${index * 40}ms` }}
               >
                 <span className="font-semibold text-[#ffffff] text-xs">{d.full_name}</span>
                 <span className="font-mono text-[#c5cace] text-xs">{d.license_number}</span>
@@ -237,30 +243,44 @@ export default function Drivers() {
                   </div>
                 </div>
                 {/* Dynamic status selection dropdown */}
-                <select
-                  value={d.status}
-                  onChange={(e) => handleInlineStatusChange(d.id, e.target.value)}
-                  className="bg-[#121b1f] border border-[#283945] rounded-full px-3 py-1.5 text-[10px] text-[#ffffff] outline-none cursor-pointer transition-all duration-150 hover:border-[#4ff7d1]/40"
-                >
-                  <option value="Available">Available</option>
-                  <option value="On Trip">On Trip</option>
-                  <option value="Off Duty">Off Duty</option>
-                  <option value="Suspended">Suspended</option>
-                </select>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleOpenEditModal(d, index)}
-                    className="btn-edit bg-transparent border border-[#1e2d38] px-4 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all duration-200 whitespace-nowrap"
+                {canModify ? (
+                  <select
+                    value={d.status}
+                    onChange={(e) => handleInlineStatusChange(d.id, e.target.value)}
+                    className="bg-[#121b1f] border border-[#283945] rounded-full px-3 py-1.5 text-[10px] text-[#ffffff] outline-none cursor-pointer transition-all duration-150 hover:border-[#4ff7d1]/40"
                   >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(d.id)}
-                    className="btn-delete bg-transparent border border-[#1e2d38] px-4 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all duration-200 whitespace-nowrap"
-                  >
-                    Delete
-                  </button>
-                </div>
+                    <option value="Available">Available</option>
+                    <option value="On Trip">On Trip</option>
+                    <option value="Off Duty">Off Duty</option>
+                    <option value="Suspended">Suspended</option>
+                  </select>
+                ) : (
+                  <span className={`inline-flex w-fit px-2.5 py-0.5 rounded-full border text-[9px] font-bold uppercase tracking-wider ${
+                    d.status === 'Available' ? 'bg-[#0e342d] text-[#4ff7d1] border-[#4ff7d1]/20' :
+                    d.status === 'On Trip' ? 'bg-[#162129] text-[#c5cace] border-[#283945]' :
+                    d.status === 'Suspended' ? 'bg-[#0d1318] text-[#ef4444] border-[#ef4444]/20' :
+                    'bg-[#162129] text-[#9ea1a3] border-[#283945]'
+                  }`}>
+                    {d.status}
+                  </span>
+                )}
+                
+                {canModify && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleOpenEditModal(d, index)}
+                      className="btn-edit bg-transparent border border-[#1e2d38] px-4 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all duration-200 whitespace-nowrap"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(d.id)}
+                      className="btn-delete bg-transparent border border-[#1e2d38] px-4 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all duration-200 whitespace-nowrap"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })

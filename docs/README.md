@@ -76,79 +76,41 @@ The platform is organized as a **layered modular monolith**. Each layer depends 
 
 ## 4. Folder Structure
 
+The project has been restructured into a fullstack monorepo with separate `frontend` and `backend` workspaces.
+
 ```
 TransitOps/
+├── backend/                       # Node.js + Express API Backend
+│   ├── scripts/                   # DB initialization scripts
+│   ├── src/
+│   │   ├── app.js                 # Express app — all routes registered here
+│   │   ├── auth/                  # JWT authentication
+│   │   ├── common/                # Shared utilities (BaseRepository, etc.)
+│   │   ├── config/                # DB and env config
+│   │   ├── middleware/            # Auth, validation, error handling
+│   │   └── modules/               # Feature modules (regions, vehicles, trips, etc.)
+│   └── package.json               # Backend dependencies
+│
+├── frontend/                      # React + Vite Frontend (Aurora UI)
+│   ├── public/                    # Static assets
+│   ├── src/
+│   │   ├── App.jsx                # React app entry
+│   │   ├── components/            # Reusable UI components
+│   │   ├── pages/                 # Route pages (Dashboard, Fleet, Trips, etc.)
+│   │   ├── context/               # React context (Auth)
+│   │   └── index.css              # Tailwind entry
+│   ├── tailwind.config.js         # Tailwind styling config
+│   ├── vite.config.js             # Vite bundler config
+│   └── package.json               # Frontend dependencies
+│
 ├── docs/                          # Documentation
 │   ├── README.md                  # ← This file
-│   ├── project_tracker.md         # Layer completion status
-│   ├── layer_0.md → layer_6.md    # Per-layer architecture docs
-│   └── main_idea.md               # Original hackathon brief
+│   └── project_tracker.md         # Status of all layers
 │
-├── scripts/                       # One-time DB initialization scripts
-│   ├── init-db.js                 # Layer 0: users table
-│   ├── init-layer1-db.js          # Layer 1: vehicles, drivers, regions, etc.
-│   ├── init-layer3-db.js          # Layer 3: trips table
-│   ├── init-layer4-db.js          # Layer 4: workshops, maintenance_records
-│   └── init-layer5-db.js          # Layer 5: fuel_logs, expenses, revenues
-│
-├── src/
-│   ├── app.js                     # Express app — all routes registered here
-│   │
-│   ├── auth/                      # JWT authentication
-│   │   ├── auth.controller.js
-│   │   └── auth.routes.js         → POST /api/auth/login, /register, GET /me
-│   │
-│   ├── common/                    # Shared utilities (no business logic)
-│   │   ├── base.repository.js     # BaseRepository — generic CRUD for all tables
-│   │   ├── catch-async.js         # Shared error wrapper for controllers
-│   │   ├── constants.js           # ROLES, VEHICLE_STATUS, DRIVER_STATUS, TRIP_STATUS
-│   │   ├── exceptions.js          # AppError, NotFoundError, ValidationError, etc.
-│   │   ├── response.js            # sendSuccess(), sendPaginatedSuccess()
-│   │   └── schemas.js             # Shared Zod schemas: idParam, pagination
-│   │
-│   ├── config/
-│   │   ├── database.js            # pg Pool connection
-│   │   └── env.js                 # Environment variable loader
-│   │
-│   ├── middleware/
-│   │   ├── auth.middleware.js      # JWT token verification
-│   │   ├── error.middleware.js     # Global error handler
-│   │   ├── logger.middleware.js    # Request logger
-│   │   ├── role.middleware.js      # RBAC role checker
-│   │   └── validate.middleware.js  # Zod schema validator
-│   │
-│   └── modules/                   # Feature modules (one per domain)
-│       │
-│       ├── regions/               # Master Data — regions
-│       ├── vehicle-types/         # Master Data — vehicle types
-│       ├── license-categories/    # Master Data — license categories
-│       ├── vehicles/              # Master Data — vehicle registry
-│       ├── drivers/               # Master Data — driver management
-│       ├── profiles/              # User profiles
-│       │
-│       ├── fleet/
-│       │   └── availability/      # Layer 2 — resource locking & status transitions
-│       │
-│       ├── operations/
-│       │   └── trips/             # Layer 3 — full trip lifecycle
-│       │
-│       ├── maintenance/
-│       │   ├── workshops/         # Layer 4 — workshop management
-│       │   └── records/           # Layer 4 — maintenance workflow
-│       │
-│       ├── finance/
-│       │   ├── fuel/              # Layer 5 — fuel log tracking
-│       │   ├── expenses/          # Layer 5 — expense tracking
-│       │   ├── revenue/           # Layer 5 — revenue recording
-│       │   └── calculator/        # Layer 5 — Cost, ROI, Efficiency engines
-│       │
-│       └── analytics/
-│           ├── kpi/               # Layer 6 — KPI aggregation engine
-│           ├── dashboard/         # Layer 6 — dashboard service & routes
-│           └── exports/           # Layer 6 — CSV export engine & routes
+└── package.json                   # Root monorepo workspace config
 ```
 
-Each module follows the same **MVC pattern**:
+Each backend module follows the same **MVC pattern**:
 ```
 module/
 ├── *.routes.js       # Defines URL paths + middleware chain

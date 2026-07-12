@@ -45,9 +45,9 @@ export default function Dashboard() {
 
   const filteredVehicles = useMemo(() => {
     return vehicles.filter(v => {
-      const matchType   = vehicleType   === 'All' || v.type   === vehicleType;
+      const matchType   = vehicleType   === 'All' || v.vehicle_type_name === vehicleType;
       const matchStatus = statusFilter  === 'All' || v.status === statusFilter;
-      const matchRegion = regionFilter  === 'All' || v.region === regionFilter;
+      const matchRegion = regionFilter  === 'All' || v.region_name === regionFilter;
       return matchType && matchStatus && matchRegion;
     });
   }, [vehicles, vehicleType, statusFilter, regionFilter]);
@@ -60,10 +60,10 @@ export default function Dashboard() {
 
     const activeTripsCount = trips.filter(t => {
       if (statusFilter !== 'All' && statusFilter !== 'On Trip') return false;
-      const vehObj = vehicles.find(v => v.registrationNumber === t.vehicle);
+      const vehObj = vehicles.find(v => v.registration_number === t.registration_number);
       if (!vehObj) return true;
-      const matchType   = vehicleType  === 'All' || vehObj.type   === vehicleType;
-      const matchRegion = regionFilter === 'All' || vehObj.region === regionFilter;
+      const matchType   = vehicleType  === 'All' || vehObj.vehicle_type_name   === vehicleType;
+      const matchRegion = regionFilter === 'All' || vehObj.region_name === regionFilter;
       return matchType && matchRegion && t.status === 'Dispatched';
     }).length;
 
@@ -300,7 +300,7 @@ export default function Dashboard() {
                     }}
                   >
                     <span className="font-mono font-bold text-xs text-white tracking-wide">{t.id}</span>
-                    <span className="font-mono text-xs text-[#c5cace]">{t.vehicle || '—'}</span>
+                    <span className="font-mono text-xs text-[#c5cace]">{t.registration_number || '—'}</span>
                     <span className="text-xs text-[#c5cace] truncate">
                       {t.source && t.destination ? `${t.source} → ${t.destination}` : '—'}
                     </span>

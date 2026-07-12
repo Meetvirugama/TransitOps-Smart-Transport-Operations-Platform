@@ -1,9 +1,7 @@
 const expenseService = require('./expense.service');
 const { sendSuccess } = require('../../../common/response');
 
-const catchAsync = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch((err) => next(err));
-};
+const catchAsync = require('../../../common/catch-async');
 
 const createExpense = catchAsync(async (req, res) => {
   const data = await expenseService.createExpense(req.body, req.user.id);

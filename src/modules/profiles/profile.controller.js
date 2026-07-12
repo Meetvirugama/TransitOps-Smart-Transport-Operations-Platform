@@ -1,9 +1,7 @@
 const profileService = require('./profile.service');
 const { sendSuccess } = require('../../common/response');
 
-const catchAsync = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch((err) => next(err));
-};
+const catchAsync = require('../../common/catch-async');
 
 const upsertMyProfile = catchAsync(async (req, res) => {
   const profile = await profileService.upsertProfile(req.user.id, req.body);

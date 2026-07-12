@@ -1,9 +1,6 @@
 const driverService = require('./driver.service');
 const { sendSuccess } = require('../../common/response');
-
-const catchAsync = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch((err) => next(err));
-};
+const catchAsync = require('../../common/catch-async');
 
 const createDriver = catchAsync(async (req, res) => {
   const driver = await driverService.createDriver(req.body);

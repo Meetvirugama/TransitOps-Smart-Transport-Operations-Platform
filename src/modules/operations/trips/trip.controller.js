@@ -1,9 +1,7 @@
 const tripService = require('./trip.service');
 const { sendSuccess } = require('../../../common/response');
 
-const catchAsync = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch((err) => next(err));
-};
+const catchAsync = require('../../../common/catch-async');
 
 const createTrip = catchAsync(async (req, res) => {
   const trip = await tripService.createTrip(req.body, req.user.id);

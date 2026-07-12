@@ -1,9 +1,6 @@
 const vehicleService = require('./vehicle.service');
 const { sendSuccess } = require('../../common/response');
-
-const catchAsync = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch((err) => next(err));
-};
+const catchAsync = require('../../common/catch-async');
 
 const createVehicle = catchAsync(async (req, res) => {
   const vehicle = await vehicleService.createVehicle(req.body);

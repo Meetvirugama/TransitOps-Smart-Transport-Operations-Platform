@@ -1,8 +1,6 @@
 const csvExport = require('../exports/csv.export');
 
-const catchAsync = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch((err) => next(err));
-};
+const catchAsync = require('../../../common/catch-async');
 
 const exportTrips = catchAsync(async (req, res) => {
   const filters = {

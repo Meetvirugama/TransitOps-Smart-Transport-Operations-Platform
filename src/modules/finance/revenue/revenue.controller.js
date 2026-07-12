@@ -1,9 +1,7 @@
 const revenueService = require('./revenue.service');
 const { sendSuccess } = require('../../../common/response');
 
-const catchAsync = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch((err) => next(err));
-};
+const catchAsync = require('../../../common/catch-async');
 
 const createRevenue = catchAsync(async (req, res) => {
   const data = await revenueService.createRevenue(req.body, req.user.id);

@@ -1,15 +1,17 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { mockDb } from '../db/mockDb';
+import { LayoutDashboard, Truck, Users, Route, Wrench, Fuel, BarChart3 } from 'lucide-react';
 
-const getAllMenuItems = () => [
-  { path: '/dashboard',     label: 'Dashboard',      permission: 'can_view_dashboard' },
-  { path: '/fleet',         label: 'Fleet',          permission: 'can_view_fleet' },
-  { path: '/drivers',       label: 'Drivers',        permission: 'can_view_drivers' },
-  { path: '/trips',         label: 'Trips',          permission: 'can_view_trips' },
-  { path: '/maintenance',   label: 'Maintenance',    permission: 'can_view_maintenance' },
-  { path: '/fuel-expenses', label: 'Fuel & Expenses',permission: 'can_view_finance' },
-  { path: '/analytics',     label: 'Analytics',      permission: 'can_view_analytics' }
+const menuItems = [
+  { path: '/dashboard',     label: 'Dashboard',      icon: LayoutDashboard },
+  { path: '/fleet',         label: 'Fleet',           icon: Truck           },
+  { path: '/drivers',       label: 'Drivers',         icon: Users           },
+  { path: '/trips',         label: 'Trips',           icon: Route           },
+  { path: '/maintenance',   label: 'Maintenance',     icon: Wrench          },
+  { path: '/fuel-expenses', label: 'Fuel & Expenses', icon: Fuel            },
+  { path: '/analytics',     label: 'Analytics',       icon: BarChart3       },
 ];
 
 export default function Header() {
@@ -57,27 +59,30 @@ export default function Header() {
     navigate('/login');
   };
 
+  const handleResetDb = () => {
+    if (window.confirm('Reset all data to default Indian seed values? You will be logged out.')) {
+      mockDb.resetDatabase();
+      logout();
+      navigate('/login');
+    }
+  };
+
   const displayName = user?.name || user?.email?.split('@')[0] || 'User';
-  const displayRole = user?.role || 'User';
+  const displayRole = user?.role || 'Dispatcher';
   const displayEmail = user?.email || '';
   const initials    = getInitials(displayName);
-  const permissions = user?.permissions || {};
-  const isAdmin     = displayRole === 'Admin';
-
-  const menuItems = getAllMenuItems().filter(item => isAdmin || permissions[item.permission]);
 
   return (
     <header className="h-16 border-b border-[#1e2d38] flex items-center justify-between px-6 shrink-0 select-none bg-[#0a0f14] w-full z-50 relative">
 
-      {/* Left: Logo + Nav */}
       <div className="flex items-center gap-6">
         {/* Brand */}
         <div className="flex items-center gap-2.5">
-          <div className="grid grid-cols-3 gap-[2px] w-6 h-6" aria-hidden="true">
-            {Array.from({ length: 9 }).map((_, i) => (
-              <span key={i} className="bg-[#4ff7d1] rounded-[1px] opacity-90" />
-            ))}
-          </div>
+          <svg width="22" height="22" viewBox="0 0 110 110" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
+            <path d="M25 80 Q25 40 55 40 Q85 40 85 10" stroke="#4ff7d1" strokeWidth="8" fill="none" strokeLinecap="round"/>
+            <circle cx="25" cy="80" r="8" fill="#4ff7d1"/>
+            <circle cx="85" cy="10" r="8" fill="#4ff7d1"/>
+          </svg>
           <h2 className="font-heading text-sm font-extrabold text-white tracking-tight">TransitOps</h2>
         </div>
 
@@ -99,16 +104,17 @@ export default function Header() {
               to={item.path}
               onMouseEnter={handleMouseEnter}
               className={({ isActive }) =>
-                `px-3.5 py-2 rounded-full text-xs font-semibold tracking-tight relative z-10 transition-all duration-150 ${
+                `flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold tracking-tight relative z-10 transition-all duration-150 ${
                   isActive ? 'text-[#4ff7d1] font-bold' : 'text-[#b6b8ba] hover:text-white'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
+                  <item.icon size={12} className="flex-shrink-0" />
                   <span>{item.label}</span>
                   {isActive && (
-                    <span className="absolute bottom-1 left-3.5 right-3.5 h-[2px] bg-[#4ff7d1] rounded-full animate-pulse-slow" />
+                    <span className="absolute bottom-1 left-3 right-3 h-[2px] bg-[#4ff7d1] rounded-full animate-pulse-slow" />
                   )}
                 </>
               )}
@@ -151,7 +157,7 @@ export default function Header() {
 
           {/* Dropdown Panel */}
           {dropdownOpen && (
-            <div className="absolute right-0 top-[calc(100%+10px)] w-72 glass-panel border border-[#1e2d38] rounded-2xl overflow-hidden z-[100] shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+            <div className="absolute right-0 top-[calc(100%+10px)] w-72 bg-gradient-to-b from-[#162129] to-[#111820] border border-[#1e2d38] rounded-2xl overflow-hidden z-[100] shadow-[0_20px_60px_rgba(0,0,0,0.75)]">
               
               {/* Top shimmer */}
               <div className="h-px w-full bg-gradient-to-r from-transparent via-[#4ff7d1]/30 to-transparent" />
@@ -169,22 +175,32 @@ export default function Header() {
               </div>
 
               {/* Menu Items */}
-              {(isAdmin || permissions.can_manage_settings) && (
-                <div className="py-2 px-2 flex flex-col gap-0.5">
-                  <button
-                    onClick={() => { setDropdownOpen(false); navigate('/settings'); }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#c5cace] hover:bg-[#162129] hover:text-white transition-all duration-150 cursor-pointer text-left"
-                  >
-                    <span className="w-5 h-5 flex items-center justify-center text-[#4ff7d1]">
-                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </span>
-                    <span className="font-medium">Settings</span>
-                  </button>
-                </div>
-              )}
+              <div className="py-2 px-2 flex flex-col gap-0.5">
+                <button
+                  onClick={() => { setDropdownOpen(false); navigate('/settings'); }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#c5cace] hover:bg-[#162129] hover:text-white transition-all duration-150 cursor-pointer text-left"
+                >
+                  <span className="w-5 h-5 flex items-center justify-center text-[#4ff7d1]">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </span>
+                  <span className="font-medium">Settings</span>
+                </button>
+
+                <button
+                  onClick={handleResetDb}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#c5cace] hover:bg-[#162129] hover:text-white transition-all duration-150 cursor-pointer text-left"
+                >
+                  <span className="w-5 h-5 flex items-center justify-center text-[#86898c]">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </span>
+                  <span className="font-medium">Reset Database</span>
+                </button>
+              </div>
 
               {/* Divider + Sign Out */}
               <div className="px-2 pb-2 border-t border-[#1e2d38] pt-2">

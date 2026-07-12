@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500&display=swap');
+@import url('https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/font/sans.css');
 
 @tailwind base;
 @tailwind components;
@@ -21,6 +22,37 @@
   --color-deep-teal: #0a2820;
   --color-electric-magenta: #d946ef;
   --color-plum-edge: #a21caf;
+
+  /* Typography — Font Families */
+  --font-geist: 'Geist Sans', 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Typography — Scale */
+  --text-caption: 12px;
+  --leading-caption: 1.33;
+  --tracking-caption: 0.6px;
+  --text-body: 14px;
+  --leading-body: 1.43;
+  --text-body-lg: 16px;
+  --leading-body-lg: 1.5;
+  --text-subheading: 18px;
+  --leading-subheading: 1.56;
+  --text-heading-sm: 24px;
+  --leading-heading-sm: 1.33;
+  --tracking-heading-sm: -0.6px;
+  --text-heading: 30px;
+  --leading-heading: 1.2;
+  --tracking-heading: -0.75px;
+  --text-heading-lg: 36px;
+  --leading-heading-lg: 1.11;
+  --tracking-heading-lg: -0.9px;
+  --text-display: 48px;
+  --leading-display: 1.1;
+  --tracking-display: -2.4px;
+
+  /* Typography — Weights */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
 }
 
 /* =========================================
@@ -31,28 +63,26 @@
 }
 
 html {
-  font-size: 16px;
+  font-size: 17px;
 }
 
 body {
   background-color: var(--color-deep-space) !important;
   color: var(--color-bone-white) !important;
-  font-family: 'Inter', sans-serif !important;
-  letter-spacing: -0.02em !important;
+  font-family: var(--font-geist) !important;
+  font-feature-settings: "ss01" on, "cv11" on !important;
+  letter-spacing: -0.025em !important;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 /* =========================================
    TYPOGRAPHY
    ========================================= */
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Inter', sans-serif !important;
-  letter-spacing: -0.03em !important;
-  color: var(--color-bone-white);
-  font-weight: 700;
-  line-height: 1.2;
+h1, h2, h3, h4, h5, h6, .font-sans, .font-heading {
+  font-family: var(--font-geist) !important;
+  font-feature-settings: "ss01" on, "cv11" on !important;
 }
 
 p {
@@ -208,6 +238,7 @@ button.bg-transparent {
   background: transparent;
 }
 button.bg-transparent:hover {
+  /* No !important here — let individual inline hover classes take effect */
   background: rgba(30, 45, 56, 0.5);
 }
 
@@ -245,9 +276,14 @@ table tr:hover {
 table th {
   color: var(--color-fog-gray) !important;
   font-weight: 600;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  padding: 14px 18px !important;
+}
+
+table td {
+  padding: 14px 18px !important;
 }
 
 /* =========================================
@@ -324,40 +360,61 @@ table th {
 }
 
 .transition-all-custom {
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-/* Glow variants for cards / containers */
-.glow-teal {
-  box-shadow: 0 0 24px rgba(79, 247, 209, 0.15), 0 0 8px rgba(79, 247, 209, 0.08) !important;
+/* =========================================
+   MICRO-INTERACTIONS — all under 200ms
+   ========================================= */
+
+/* Card lift on hover */
+.kpi-card:hover {
+  transform: translateY(-3px);
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
-.glow-purple {
-  box-shadow: 0 0 24px rgba(217, 70, 239, 0.15), 0 0 8px rgba(217, 70, 239, 0.08) !important;
+/* Table row highlight */
+table tr {
+  transition: background-color 0.15s ease;
 }
 
-/* Gradient text */
-.gradient-text {
-  background: linear-gradient(135deg, #4ff7d1 0%, #a5f3fc 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+/* Button press feedback */
+button:active {
+  transform: scale(0.97) !important;
+  transition: transform 0.1s ease !important;
 }
 
-/* Glass panel utility */
-.glass-panel {
-  background: linear-gradient(135deg, rgba(20, 30, 38, 0.8) 0%, rgba(14, 20, 28, 0.9) 100%);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(30, 45, 56, 0.8);
-  border-radius: 16px;
+/* Glow — hover only, not on idle cards */
+.hover-glow {
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-/* Fade-in animation for alerts */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
+.hover-glow:hover {
+  border-color: rgba(79, 247, 209, 0.45) !important;
+  box-shadow: 0 0 14px rgba(79, 247, 209, 0.14) !important;
+  transform: translateY(-1px);
 }
 
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out forwards;
+/* Stat dashboard label styles */
+.stat-label {
+  font-family: var(--font-geist), sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  color: #F5F5F0;
+  line-height: 1.4;
 }
+
+.stat-percent {
+  font-family: 'Fira Code', var(--font-mono), monospace;
+  font-weight: 500;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-caption {
+  font-family: var(--font-geist), sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  color: #8A8A85;
+}
+

@@ -6,11 +6,8 @@ import Dashboard from './pages/Dashboard';
 import Fleet from './pages/Fleet';
 import Drivers from './pages/Drivers';
 import Trips from './pages/Trips';
-import Maintenance from './pages/Maintenance';
-import FuelExpenses from './pages/FuelExpenses';
 import Settings from './pages/Settings';
 import Header from './components/Header';
-import AIChatbot from './components/AIChatbot';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
@@ -21,12 +18,11 @@ const ProtectedRoute = ({ children }) => {
 // Main Layout Wrapper
 const Layout = ({ children }) => {
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#0d1318] text-[#ffffff] overflow-hidden font-sans relative">
+    <div className="flex flex-col h-screen w-screen bg-[#0d1318] text-[#ffffff] overflow-hidden font-sans">
       <Header />
       <main className="flex-1 overflow-y-auto p-8">
         {children}
       </main>
-      <AIChatbot />
     </div>
   );
 };
@@ -82,7 +78,10 @@ function AppRoutes() {
       <Route path="/maintenance" element={
         <ProtectedRoute>
           <Layout>
-            <Maintenance />
+            <Placeholder
+              title="5. Maintenance Log"
+              desc="Assign vehicles to shop, review repair history, and track scheduling tasks."
+            />
           </Layout>
         </ProtectedRoute>
       } />
@@ -90,7 +89,10 @@ function AppRoutes() {
       <Route path="/fuel-expenses" element={
         <ProtectedRoute>
           <Layout>
-            <FuelExpenses />
+            <Placeholder 
+              title="6. Fuel & Expenses" 
+              desc="Record fuel fills, toll fees, maintenance invoices, and track operational expenditure." 
+            />
           </Layout>
         </ProtectedRoute>
       } />

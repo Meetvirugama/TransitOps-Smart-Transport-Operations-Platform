@@ -239,7 +239,7 @@ export default function Drivers() {
                 {/* Dynamic status selection dropdown */}
                 <select
                   value={d.status}
-                  onChange={(e) => handleInlineStatusChange(index, e.target.value)}
+                  onChange={(e) => handleInlineStatusChange(d.id, e.target.value)}
                   className="bg-[#121b1f] border border-[#283945] rounded-full px-3 py-1.5 text-[10px] text-[#ffffff] outline-none cursor-pointer transition-all duration-150 hover:border-[#4ff7d1]/40"
                 >
                   <option value="Available">Available</option>
@@ -255,7 +255,7 @@ export default function Drivers() {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDelete(index)}
+                    onClick={() => handleDelete(d.id)}
                     className="btn-delete bg-transparent border border-[#1e2d38] px-4 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all duration-200 whitespace-nowrap"
                   >
                     Delete

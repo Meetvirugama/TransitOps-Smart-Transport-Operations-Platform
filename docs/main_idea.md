@@ -1,10 +1,7 @@
-> ⚠️ **Note:** No frontend. API-only backend platform.
-
 # TransitOps — Smart Transport Operations Platform
 
-> **Type:** Backend API Platform (Node.js + Express + PostgreSQL)
+> **Type:** Fullstack Monorepo (React Frontend + Node.js/Express Backend)
 > **Purpose:** Digitize the complete lifecycle of transport operations
-> **Constraint:** API-only — no frontend implementation
 
 ---
 

@@ -1,11 +1,26 @@
-import React, { useState, useMemo } from 'react';
-import { mockDb } from '../db/mockDb';
+import React, { useState, useEffect, useMemo } from 'react';
+import api from '../config/api';
 import Modal from '../components/Modal';
 
 export default function Drivers() {
-  const [drivers, setDrivers] = useState(() => mockDb.getDrivers());
+  const [drivers, setDrivers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStatusFilter, setActiveStatusFilter] = useState('All');
+
+  const fetchDrivers = async () => {
+    try {
+      const res = await api.get('/drivers', { params: { limit: 100 } });
+      if (res.success) {
+        setDrivers(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch drivers', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchDrivers();
+  }, []);
 
   // Modal forms states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,8 +38,8 @@ export default function Drivers() {
   // Filter Drivers
   const filteredDrivers = useMemo(() => {
     return drivers.filter(d => {
-      const matchSearch = d.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          d.licenseNumber.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchSearch = d.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          d.license_number?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchStatus = activeStatusFilter === 'All' || d.status === activeStatusFilter;
       return matchSearch && matchStatus;
     });
@@ -45,71 +60,62 @@ export default function Drivers() {
 
   const handleOpenEditModal = (d, idx) => {
     setIsEditing(true);
-    setEditingIdx(idx);
+    setEditingIdx(d.id); // store ID instead of idx
     setName(d.name);
-    setLicNo(d.licenseNumber);
-    setCategory(d.licenseCategory);
-    setExpiry(d.licenseExpiryDate);
-    setContact(d.contactNumber);
-    setSafetyScore(d.safetyScore);
+    setLicNo(d.license_number);
+    setCategory(d.license_category ? d.license_category.name : 'LMV');
+    setExpiry(d.license_expiry_date ? d.license_expiry_date.substring(0, 10) : '');
+    setContact(d.contact_number);
+    setSafetyScore(d.safety_score);
     setStatus(d.status);
     setIsModalOpen(true);
   };
 
-  const handleDelete = (idx) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this driver?")) {
-      const updated = [...drivers];
-      updated.splice(idx, 1);
-      mockDb.saveDrivers(updated);
-      setDrivers(updated);
+      try {
+        await api.delete(`/drivers/${id}`);
+        fetchDrivers();
+      } catch (err) {
+        alert(err.message || 'Failed to delete driver');
+      }
     }
   };
 
-  const handleInlineStatusChange = (idx, newStatus) => {
-    const updated = [...drivers];
-    updated[idx].status = newStatus;
-    mockDb.saveDrivers(updated);
-    setDrivers(updated);
+  const handleInlineStatusChange = async (id, newStatus) => {
+    try {
+      await api.put(`/drivers/${id}`, { status: newStatus });
+      fetchDrivers();
+    } catch (err) {
+      alert(err.message || 'Failed to update status');
+    }
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     const parsedSafety = parseInt(safetyScore, 10);
 
-    if (!isEditing) {
-      const newDriver = {
-        name: name.trim(),
-        licenseNumber: licNo.trim().toUpperCase(),
-        licenseCategory: category.trim(),
-        licenseExpiryDate: expiry,
-        contactNumber: contact.trim(),
-        safetyScore: parsedSafety,
-        status
-      };
-      const updated = [...drivers, newDriver];
-      mockDb.saveDrivers(updated);
-      setDrivers(updated);
-    } else {
-      const updated = drivers.map((d, index) => {
-        if (index === editingIdx) {
-          return {
-            ...d,
-            name: name.trim(),
-            licenseNumber: licNo.trim().toUpperCase(),
-            licenseCategory: category.trim(),
-            licenseExpiryDate: expiry,
-            contactNumber: contact.trim(),
-            safetyScore: parsedSafety,
-            status
-          };
-        }
-        return d;
-      });
-      mockDb.saveDrivers(updated);
-      setDrivers(updated);
-    }
+    const payload = {
+      name: name.trim(),
+      license_number: licNo.trim().toUpperCase(),
+      license_category_id: 1, // Defaulting for now
+      license_expiry_date: expiry,
+      contact_number: contact.trim(),
+      safety_score: parsedSafety,
+      status
+    };
 
-    setIsModalOpen(false);
+    try {
+      if (!isEditing) {
+        await api.post('/drivers', payload);
+      } else {
+        await api.put(`/drivers/${editingIdx}`, payload);
+      }
+      fetchDrivers();
+      setIsModalOpen(false);
+    } catch (err) {
+      alert(err.message || 'An error occurred.');
+    }
   };
 
   return (
@@ -186,38 +192,45 @@ export default function Drivers() {
             ) : (
               filteredDrivers.map((d, index) => {
                 // Expiry Check
-                const expDate = new Date(d.licenseExpiryDate);
-                const isExpired = expDate < new Date();
-                const formattedExpiry = isExpired 
-                  ? <span className="text-accent-red font-bold">{d.licenseExpiryDate.slice(5, 7)}/{d.licenseExpiryDate.slice(0, 4)} EXPIRED</span>
-                  : `${d.licenseExpiryDate.slice(5, 7)}/${d.licenseExpiryDate.slice(0, 4)}`;
+                let expDate = new Date();
+                let isExpired = false;
+                let formattedExpiry = '—';
+                
+                if (d.license_expiry_date) {
+                  const dateStr = d.license_expiry_date.substring(0, 10);
+                  expDate = new Date(dateStr);
+                  isExpired = expDate < new Date();
+                  formattedExpiry = isExpired 
+                    ? <span className="text-accent-red font-bold">{dateStr.slice(5, 7)}/{dateStr.slice(0, 4)} EXPIRED</span>
+                    : `${dateStr.slice(5, 7)}/${dateStr.slice(0, 4)}`;
+                }
 
                 // Contact Masking matching mockup (98765xxxxx)
-                const maskedContact = d.contactNumber.length > 5 
-                  ? `${d.contactNumber.slice(0, 5)}xxxxx`
-                  : d.contactNumber;
+                const maskedContact = d.contact_number?.length > 5 
+                  ? `${d.contact_number.slice(0, 5)}xxxxx`
+                  : d.contact_number || '—';
 
                 // Safety score color threshold
                 let scoreColor = 'text-accent-green';
-                if (d.safetyScore < 90) scoreColor = 'text-accent-orange';
-                if (d.safetyScore < 80) scoreColor = 'text-accent-red';
+                if (d.safety_score < 90) scoreColor = 'text-accent-orange';
+                if (d.safety_score < 80) scoreColor = 'text-accent-red';
 
                 return (
-                  <tr key={index} className="border-b border-white/[0.01] hover:bg-white/[0.01]">
+                  <tr key={d.id} className="border-b border-white/[0.01] hover:bg-white/[0.01]">
                     <td className="py-3.5 px-4 font-semibold">{d.name}</td>
-                    <td className="py-3.5 px-4 font-mono">{d.licenseNumber}</td>
-                    <td className="py-3.5 px-4">{d.licenseCategory}</td>
+                    <td className="py-3.5 px-4 font-mono">{d.license_number}</td>
+                    <td className="py-3.5 px-4">{d.license_category ? d.license_category.name : '—'}</td>
                     <td className="py-3.5 px-4">{formattedExpiry}</td>
                     <td className="py-3.5 px-4">{maskedContact}</td>
                     <td className="py-3.5 px-4">96%</td>
                     <td className="py-3.5 px-4 font-semibold">
-                      <span className={scoreColor}>{d.safetyScore}/100</span>
+                      <span className={scoreColor}>{d.safety_score || 0}/100</span>
                     </td>
                     <td className="py-3.5 px-4">
                       {/* Dynamic status selection dropdown */}
                       <select
                         value={d.status}
-                        onChange={(e) => handleInlineStatusChange(index, e.target.value)}
+                        onChange={(e) => handleInlineStatusChange(d.id, e.target.value)}
                         className="bg-dark border border-dark-border rounded px-2 py-1 text-[11px] text-dark-text outline-none cursor-pointer"
                       >
                         <option value="Available">Available</option>
@@ -234,7 +247,7 @@ export default function Drivers() {
                         Edit
                       </button>
                       <button 
-                        onClick={() => handleDelete(index)}
+                        onClick={() => handleDelete(d.id)}
                         className="bg-transparent border border-dark-border hover:border-accent-red hover:text-accent-red px-2.5 py-1 rounded text-[10px] cursor-pointer transition-all duration-150"
                       >
                         Delete

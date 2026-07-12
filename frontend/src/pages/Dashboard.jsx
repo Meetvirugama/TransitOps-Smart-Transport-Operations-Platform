@@ -1,66 +1,66 @@
-import React, { useState, useMemo } from 'react';
-import { mockDb } from '../db/mockDb';
+import React, { useState, useEffect } from 'react';
+import api from '../config/api';
 
 export default function Dashboard() {
   const [vehicleType, setVehicleType] = useState('All');
-  const [statusFilter, setStatusFilter] = useState('All');
   const [regionFilter, setRegionFilter] = useState('All');
+  
+  const [loading, setLoading] = useState(true);
+  const [kpis, setKpis] = useState({
+    activeCount: 0,
+    availableCount: 0,
+    inShopCount: 0,
+    retiredCount: 0,
+    activeTripsCount: 0,
+    pendingTripsCount: 0,
+    driversOnDuty: 0,
+    utilizationPct: 0,
+    totalVehicles: 1
+  });
+  
+  const [recentTrips, setRecentTrips] = useState([]);
 
-  // Load database entities
-  const vehicles = useMemo(() => mockDb.getVehicles(), []);
-  const trips = useMemo(() => mockDb.getTrips(), []);
-  const drivers = useMemo(() => mockDb.getDrivers(), []);
+  useEffect(() => {
+    fetchDashboardData();
+  }, [vehicleType, regionFilter]);
 
-  // Filter vehicles dynamically based on selections
-  const filteredVehicles = useMemo(() => {
-    return vehicles.filter(v => {
-      const matchType = vehicleType === 'All' || v.type === vehicleType;
-      const matchStatus = statusFilter === 'All' || v.status === statusFilter;
-      const matchRegion = regionFilter === 'All' || v.region === regionFilter;
-      return matchType && matchStatus && matchRegion;
-    });
-  }, [vehicles, vehicleType, statusFilter, regionFilter]);
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    try {
+      // 1. Fetch dashboard KPIs
+      const params = {};
+      // Note: Backend might need integer IDs for region_id/vehicle_type_id if 'All' isn't used
+      // For now we'll just not send them if 'All' is selected, assuming the backend ignores undefined.
+      
+      const res = await api.get('/analytics/dashboard', { params });
+      if (res.success) {
+        const data = res.data;
+        setKpis({
+          activeCount: data.vehicles.onTrip,
+          availableCount: data.vehicles.available,
+          inShopCount: data.vehicles.inShop,
+          retiredCount: data.vehicles.retired,
+          activeTripsCount: data.trips.active,
+          pendingTripsCount: data.trips.draft,
+          driversOnDuty: data.drivers.onTrip, // Approximate 'On Duty' as 'onTrip'
+          utilizationPct: data.kpis.fleetUtilizationPercentage,
+          totalVehicles: data.vehicles.total || 1
+        });
+      }
 
-  // Compute KPI values
-  const kpis = useMemo(() => {
-    const activeCount = filteredVehicles.filter(v => v.status === 'On Trip').length;
-    const availableCount = filteredVehicles.filter(v => v.status === 'Available').length;
-    const inShopCount = filteredVehicles.filter(v => v.status === 'In Shop').length;
-    const retiredCount = filteredVehicles.filter(v => v.status === 'Retired').length;
+      // 2. Fetch recent trips
+      const tripsRes = await api.get('/trips', { params: { limit: 5 } });
+      if (tripsRes.success) {
+        // Backend returns trips sorted (hopefully)
+        setRecentTrips(tripsRes.data);
+      }
 
-    // Filter trips that match the vehicle criteria
-    const activeTripsCount = trips.filter(t => {
-      if (statusFilter !== 'All' && statusFilter !== 'On Trip') return false;
-      const vehObj = vehicles.find(v => v.registrationNumber === t.vehicle);
-      if (!vehObj) return true;
-      const matchType = vehicleType === 'All' || vehObj.type === vehicleType;
-      const matchRegion = regionFilter === 'All' || vehObj.region === regionFilter;
-      return matchType && matchRegion && t.status === 'Dispatched';
-    }).length;
-
-    const pendingTripsCount = trips.filter(t => t.status === 'Draft').length;
-    const driversOnDuty = drivers.filter(d => d.status === 'Available' || d.status === 'On Trip').length;
-    
-    const totalVehicles = filteredVehicles.length;
-    const utilizationPct = totalVehicles > 0 ? Math.round((activeCount / totalVehicles) * 100) : 0;
-
-    return {
-      activeCount,
-      availableCount,
-      inShopCount,
-      retiredCount,
-      activeTripsCount,
-      pendingTripsCount,
-      driversOnDuty,
-      utilizationPct,
-      totalVehicles: totalVehicles || 1
-    };
-  }, [filteredVehicles, trips, drivers, vehicles, vehicleType, statusFilter, regionFilter]);
-
-  // Take latest 5 trips for display
-  const recentTrips = useMemo(() => {
-    return [...trips].reverse().slice(0, 5);
-  }, [trips]);
+    } catch (err) {
+      console.error('Failed to fetch dashboard data', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6 select-none">
@@ -72,7 +72,6 @@ export default function Dashboard() {
       <div className="flex gap-4 flex-wrap">
         {[
           { label: 'Vehicle Type', value: vehicleType, onChange: setVehicleType, options: ['All', 'Van', 'Truck', 'Mini'] },
-          { label: 'Status', value: statusFilter, onChange: setStatusFilter, options: ['All', 'Available', 'On Trip', 'In Shop', 'Retired'] },
           { label: 'Region', value: regionFilter, onChange: setRegionFilter, options: ['All', 'North', 'South', 'East', 'West'] }
         ].map((f) => (
           <div key={f.label} className="flex flex-col gap-1.5">
@@ -156,9 +155,9 @@ export default function Dashboard() {
 
                     return (
                       <tr key={t.id} className="border-b border-white/[0.01] hover:bg-white/[0.01]">
-                        <td className="py-3 px-4 font-mono font-semibold">{t.id}</td>
-                        <td className="py-3 px-4 font-mono">{t.vehicle || '—'}</td>
-                        <td className="py-3 px-4">{t.driver || '—'}</td>
+                        <td className="py-3 px-4 font-mono font-semibold">{t.trip_number || t.id}</td>
+                        <td className="py-3 px-4 font-mono">{t.vehicle_id || '—'}</td>
+                        <td className="py-3 px-4">{t.driver_id || '—'}</td>
                         <td className="py-3 px-4">
                           <span className={`inline-flex px-2 py-0.5 rounded border text-[10px] font-semibold uppercase ${pillColor}`}>
                             {t.status}

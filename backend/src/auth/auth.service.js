@@ -4,13 +4,16 @@ const { generateToken } = require('./jwt');
 const { UnauthorizedError, AppError } = require('../common/exceptions');
 
 const login = async (email, password) => {
+  console.log(`[LOGIN ATTEMPT] email: "${email}", password: "${password}"`);
   const user = await authRepo.getUserByEmail(email);
   if (!user) {
+    console.log(`[LOGIN FAILED] User not found for email: "${email}"`);
     throw new UnauthorizedError('Invalid email or password');
   }
 
   const isMatch = await bcrypt.compare(password, user.password_hash);
   if (!isMatch) {
+    console.log(`[LOGIN FAILED] Password mismatch for email: "${email}"`);
     throw new UnauthorizedError('Invalid email or password');
   }
 

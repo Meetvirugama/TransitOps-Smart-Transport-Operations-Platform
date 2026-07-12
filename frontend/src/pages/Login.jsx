@@ -8,7 +8,6 @@ export default function Login() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [shake, setShake] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -18,13 +17,9 @@ export default function Login() {
   // Prefill remembered credentials
   useEffect(() => {
     const rememberedEmail = localStorage.getItem('transitops_remembered_email');
-    const rememberedRole = localStorage.getItem('transitops_remembered_role');
     if (rememberedEmail) {
       setEmail(rememberedEmail);
       setRememberMe(true);
-    }
-    if (rememberedRole) {
-      setRole(rememberedRole);
     }
   }, []);
 
@@ -38,33 +33,7 @@ export default function Login() {
     }
   }, [errorMsg]);
 
-  // Handle role change - auto fills credentials
-  const handleRoleChange = (selectedRole) => {
-    setRole(selectedRole);
-    if (!selectedRole) return;
 
-    const roleCredentials = {
-      'Fleet Manager': { email: 'manager@transitops.in', password: 'admin123' },
-      'Dispatcher': { email: 'dispatcher@transitops.in', password: 'admin123' },
-      'Safety Officer': { email: 'safety@transitops.in', password: 'admin123' },
-      'Financial Analyst': { email: 'finance@transitops.in', password: 'admin123' }
-    };
-
-    const creds = roleCredentials[selectedRole];
-    if (creds) {
-      setEmail(creds.email);
-      setPassword(creds.password);
-      setErrorMsg('');
-
-      // Auto check lockout
-      if (isLockedOut(creds.email)) {
-        setErrorMsg('Account locked after 5 failed attempts.');
-        setLocked(true);
-      } else {
-        setLocked(false);
-      }
-    }
-  };
 
   // Keystroke check for lockout
   const handleEmailInput = (e) => {
@@ -79,25 +48,23 @@ export default function Login() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
 
-    if (!email || !password || !role) {
-      setErrorMsg('Please fill out all fields and select your role.');
+    if (!email || !password) {
+      setErrorMsg('Please fill out all fields.');
       triggerShakeEffect();
       return;
     }
 
-    const result = login(email, password, role);
+    const result = await login(email, password);
 
     if (result.success) {
       if (rememberMe) {
         localStorage.setItem('transitops_remembered_email', email);
-        localStorage.setItem('transitops_remembered_role', role);
       } else {
         localStorage.removeItem('transitops_remembered_email');
-        localStorage.removeItem('transitops_remembered_role');
       }
       navigate('/dashboard');
     } else {
@@ -115,10 +82,9 @@ export default function Login() {
   };
 
   // Demo Helper Quick Select
-  const handleDemoClick = (demEmail, demRole) => {
+  const handleDemoClick = (demEmail) => {
     setEmail(demEmail);
     setPassword('admin123');
-    setRole(demRole);
     setShowDemo(false);
     setErrorMsg('');
 
@@ -267,27 +233,7 @@ export default function Login() {
               />
             </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="font-mono text-[10px] text-dark-muted font-semibold tracking-wider uppercase">Role (RBAC)</label>
-              <select
-                value={role}
-                onChange={(e) => handleRoleChange(e.target.value)}
-                className="w-full bg-[#0B0F19] border border-dark-border rounded-md px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-brand focus:ring-2 focus:ring-brand/35 text-dark-text cursor-pointer appearance-none pr-10"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748B'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 1rem center',
-                  backgroundSize: '1.2rem'
-                }}
-                required
-              >
-                <option value="" disabled>Select your role...</option>
-                <option value="Fleet Manager">Fleet Manager</option>
-                <option value="Dispatcher">Dispatcher</option>
-                <option value="Safety Officer">Safety Officer</option>
-                <option value="Financial Analyst">Financial Analyst</option>
-              </select>
-            </div>
+
 
             <div className="flex items-center justify-between text-xs font-semibold">
               <label className="flex items-center gap-2 cursor-pointer select-none text-dark-text">
@@ -355,7 +301,7 @@ export default function Login() {
             ].map((acc) => (
               <div 
                 key={acc.role} 
-                onClick={() => handleDemoClick(acc.email, acc.role)}
+                onClick={() => handleDemoClick(acc.email)}
                 className="bg-dark-bg border border-dark-border hover:border-brand hover:bg-brand/5 rounded-lg p-3 cursor-pointer transition-all duration-150 text-left"
               >
                 <div className="text-[10px] font-bold text-brand uppercase">{acc.role}</div>

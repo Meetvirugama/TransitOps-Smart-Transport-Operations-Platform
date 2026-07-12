@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { mockDb } from '../db/mockDb';
+import api from '../config/api';
 
 const AuthContext = createContext(null);
 
@@ -39,9 +39,9 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem(key);
   };
 
-  const login = (email, password, role) => {
-    if (!email || !password || !role) {
-      return { success: false, message: 'All fields (Email, Password, Role) are required.' };
+  const login = async (email, password) => {
+    if (!email || !password) {
+      return { success: false, message: 'Both Email and Password are required.' };
     }
 
     const emailLower = email.trim().toLowerCase();
@@ -51,13 +51,28 @@ export const AuthProvider = ({ children }) => {
       return { success: false, message: 'Account locked after 5 failed attempts.', locked: true };
     }
 
-    const users = mockDb.getUsers();
-    const matchedUser = users.find(u => u.email.toLowerCase() === emailLower && u.password === password);
+    try {
+      const response = await api.post('/auth/login', { email: emailLower, password });
+      const { user: matchedUser, token } = response.data;
 
-    if (!matchedUser) {
+      // Success
+      resetFailedAttempts(emailLower);
+      const sessionUser = {
+        id: matchedUser.id,
+        email: matchedUser.email,
+        name: matchedUser.name || matchedUser.email.split('@')[0], // Backend currently doesn't store 'name'
+        role: matchedUser.role,
+        loggedInAt: new Date().toISOString()
+      };
+
+      localStorage.setItem('transitops_token', token);
+      sessionStorage.setItem('transitops_session', JSON.stringify(sessionUser));
+      setUser(sessionUser);
+      return { success: true, user: sessionUser };
+    } catch (error) {
       const attempts = incrementFailedAttempts(emailLower);
       const remaining = Math.max(0, 5 - attempts);
-      let message = 'Invalid credentials.';
+      let message = error.message || 'Invalid credentials.';
       if (remaining === 0) {
         message += ' Account locked after 5 failed attempts.';
       } else {
@@ -65,35 +80,10 @@ export const AuthProvider = ({ children }) => {
       }
       return { success: false, message, locked: remaining === 0 };
     }
-
-    // Enforce RBAC
-    if (matchedUser.role !== role) {
-      const attempts = incrementFailedAttempts(emailLower);
-      const remaining = Math.max(0, 5 - attempts);
-      let message = `Invalid credentials for the selected role (${role}).`;
-      if (remaining === 0) {
-        message += ' Account locked after 5 failed attempts.';
-      } else {
-        message += ` ${remaining} attempts remaining before lockout.`;
-      }
-      return { success: false, message, locked: remaining === 0 };
-    }
-
-    // Success
-    resetFailedAttempts(emailLower);
-    const sessionUser = {
-      email: matchedUser.email,
-      name: matchedUser.name,
-      role: matchedUser.role,
-      loggedInAt: new Date().toISOString()
-    };
-
-    sessionStorage.setItem('transitops_session', JSON.stringify(sessionUser));
-    setUser(sessionUser);
-    return { success: true, user: sessionUser };
   };
 
   const logout = () => {
+    localStorage.removeItem('transitops_token');
     sessionStorage.removeItem('transitops_session');
     setUser(null);
   };

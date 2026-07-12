@@ -1,12 +1,27 @@
-import React, { useState, useMemo } from 'react';
-import { mockDb } from '../db/mockDb';
+import React, { useState, useEffect, useMemo } from 'react';
+import api from '../config/api';
 import Modal from '../components/Modal';
 
 export default function Fleet() {
-  const [vehicles, setVehicles] = useState(() => mockDb.getVehicles());
+  const [vehicles, setVehicles] = useState([]);
   const [typeFilter, setTypeFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const fetchVehicles = async () => {
+    try {
+      const res = await api.get('/vehicles', { params: { limit: 100 } });
+      if (res.success) {
+        setVehicles(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch vehicles', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchVehicles();
+  }, []);
 
   // Modal forms states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,10 +40,12 @@ export default function Fleet() {
   // Filter vehicles
   const filteredVehicles = useMemo(() => {
     return vehicles.filter(v => {
-      const matchType = typeFilter === 'All' || v.type === typeFilter;
+      // Backend returns vehicle_type object occasionally or string, assume name for now
+      const vType = v.vehicle_type ? v.vehicle_type.name : v.type;
+      const matchType = typeFilter === 'All' || vType === typeFilter;
       const matchStatus = statusFilter === 'All' || v.status === statusFilter;
-      const matchSearch = v.registrationNumber.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          v.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchSearch = v.registration_number?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          v.name?.toLowerCase().includes(searchQuery.toLowerCase());
       return matchType && matchStatus && matchSearch;
     });
   }, [vehicles, typeFilter, statusFilter, searchQuery]);
@@ -49,27 +66,31 @@ export default function Fleet() {
 
   const handleOpenEditModal = (veh) => {
     setIsEditing(true);
-    setEditingReg(veh.registrationNumber);
-    setRegNo(veh.registrationNumber);
+    setEditingReg(veh.id); // store ID instead of registration_number for editing
+    setRegNo(veh.registration_number);
     setName(veh.name);
-    setType(veh.type);
-    setCapacity(veh.maxCapacity);
+    // Try to safely handle if backend sends an object or just ID. If object, use name. If missing, default.
+    setType(veh.vehicle_type ? veh.vehicle_type.name : 'Van');
+    setCapacity(veh.max_capacity);
     setOdometer(veh.odometer);
-    setCost(veh.acquisitionCost);
+    setCost(veh.acquisition_cost);
     setStatus(veh.status);
     setRegError('');
     setIsModalOpen(true);
   };
 
-  const handleDelete = (reg) => {
+  const handleDelete = async (id, reg) => {
     if (window.confirm(`Are you sure you want to remove vehicle ${reg}?`)) {
-      const updated = vehicles.filter(v => v.registrationNumber !== reg);
-      mockDb.saveVehicles(updated);
-      setVehicles(updated);
+      try {
+        await api.delete(`/vehicles/${id}`);
+        fetchVehicles();
+      } catch (err) {
+        alert(err.message || 'Failed to delete vehicle');
+      }
     }
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     setRegError('');
 
@@ -78,47 +99,32 @@ export default function Fleet() {
     const parsedOdo = parseInt(odometer, 10);
     const parsedCost = parseInt(cost, 10);
 
-    if (!isEditing) {
-      // Unique check
-      if (vehicles.some(v => v.registrationNumber === formattedReg)) {
-        setRegError('Registration number already exists.');
-        return;
+    const payload = {
+      registration_number: formattedReg,
+      name: name.trim(),
+      vehicle_type_id: 1, // Defaulting for now, full implementation would fetch vehicle types
+      max_capacity: parsedCapacity,
+      odometer: parsedOdo,
+      acquisition_cost: parsedCost,
+      status,
+      region_id: 1 // Defaulting to region 1 for now
+    };
+
+    try {
+      if (!isEditing) {
+        await api.post('/vehicles', payload);
+      } else {
+        await api.put(`/vehicles/${editingReg}`, payload);
       }
-
-      const newVeh = {
-        registrationNumber: formattedReg,
-        name: name.trim(),
-        type,
-        maxCapacity: parsedCapacity,
-        odometer: parsedOdo,
-        acquisitionCost: parsedCost,
-        status,
-        region: ['North', 'South', 'East', 'West'][Math.floor(Math.random() * 4)]
-      };
-
-      const updated = [...vehicles, newVeh];
-      mockDb.saveVehicles(updated);
-      setVehicles(updated);
-    } else {
-      const updated = vehicles.map(v => {
-        if (v.registrationNumber === editingReg) {
-          return {
-            ...v,
-            name: name.trim(),
-            type,
-            maxCapacity: parsedCapacity,
-            odometer: parsedOdo,
-            acquisitionCost: parsedCost,
-            status
-          };
-        }
-        return v;
-      });
-      mockDb.saveVehicles(updated);
-      setVehicles(updated);
+      fetchVehicles();
+      setIsModalOpen(false);
+    } catch (err) {
+      if (err.message && err.message.includes('unique constraint')) {
+        setRegError('Registration number already exists.');
+      } else {
+        setRegError(err.message || 'An error occurred.');
+      }
     }
-
-    setIsModalOpen(false);
   };
 
   return (
@@ -211,13 +217,13 @@ export default function Fleet() {
                 if (v.status === 'Retired') pillColor = 'bg-accent-red/12 text-accent-red border-accent-red/25';
 
                 return (
-                  <tr key={v.registrationNumber} className="border-b border-white/[0.01] hover:bg-white/[0.01]">
-                    <td className="py-3.5 px-4 font-mono font-semibold">{v.registrationNumber}</td>
+                  <tr key={v.id} className="border-b border-white/[0.01] hover:bg-white/[0.01]">
+                    <td className="py-3.5 px-4 font-mono font-semibold">{v.registration_number}</td>
                     <td className="py-3.5 px-4">{v.name}</td>
-                    <td className="py-3.5 px-4">{v.type}</td>
-                    <td className="py-3.5 px-4">{v.maxCapacity} kg</td>
-                    <td className="py-3.5 px-4 font-mono">{v.odometer.toLocaleString()}</td>
-                    <td className="py-3.5 px-4 font-mono">${v.acquisitionCost.toLocaleString('en-IN')}</td>
+                    <td className="py-3.5 px-4">{v.vehicle_type ? v.vehicle_type.name : 'Unknown'}</td>
+                    <td className="py-3.5 px-4">{v.max_capacity} kg</td>
+                    <td className="py-3.5 px-4 font-mono">{Number(v.odometer).toLocaleString()}</td>
+                    <td className="py-3.5 px-4 font-mono">${Number(v.acquisition_cost).toLocaleString('en-IN')}</td>
                     <td className="py-3.5 px-4">
                       <span className={`inline-flex px-2 py-0.5 rounded border text-[10px] font-semibold uppercase ${pillColor}`}>
                         {v.status}
@@ -231,7 +237,7 @@ export default function Fleet() {
                         Edit
                       </button>
                       <button 
-                        onClick={() => handleDelete(v.registrationNumber)}
+                        onClick={() => handleDelete(v.id, v.registration_number)}
                         className="bg-transparent border border-dark-border hover:border-accent-red hover:text-accent-red px-2.5 py-1 rounded text-[10px] cursor-pointer transition-all duration-150"
                       >
                         Delete

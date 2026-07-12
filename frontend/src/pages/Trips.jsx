@@ -1,12 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { mockDb } from '../db/mockDb';
+import api from '../config/api';
 import Modal from '../components/Modal';
 
 export default function Trips() {
   // DB States
-  const [trips, setTrips] = useState(() => mockDb.getTrips());
-  const [vehicles, setVehicles] = useState(() => mockDb.getVehicles());
-  const [drivers, setDrivers] = useState(() => mockDb.getDrivers());
+  const [trips, setTrips] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
+  const [drivers, setDrivers] = useState([]);
 
   // Form Fields
   const [selectedTripId, setSelectedTripId] = useState(null);
@@ -34,6 +34,26 @@ export default function Trips() {
   const [compExpenses, setCompExpenses] = useState('0');
   const [odoError, setOdoError] = useState('');
 
+  // Fetch Data
+  const fetchData = async () => {
+    try {
+      const [tripsRes, vehRes, drvRes] = await Promise.all([
+        api.get('/trips', { params: { limit: 100 } }),
+        api.get('/vehicles', { params: { limit: 100 } }),
+        api.get('/drivers', { params: { limit: 100 } })
+      ]);
+      if (tripsRes.success) setTrips(tripsRes.data);
+      if (vehRes.success) setVehicles(vehRes.data);
+      if (drvRes.success) setDrivers(drvRes.data);
+    } catch (err) {
+      console.error('Failed to fetch trip data', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   // 1. Populate Dropdown selectors
   // Available vehicles
   const availableVehicles = useMemo(() => {
@@ -44,7 +64,10 @@ export default function Trips() {
   const availableDrivers = useMemo(() => {
     return drivers.filter(d => {
       const isAvailable = d.status === 'Available';
-      const isExpired = new Date(d.licenseExpiryDate) < new Date();
+      let isExpired = false;
+      if (d.license_expiry_date) {
+        isExpired = new Date(d.license_expiry_date) < new Date();
+      }
       const isSuspended = d.status === 'Suspended';
       return isAvailable && !isExpired && !isSuspended;
     });
@@ -56,14 +79,14 @@ export default function Trips() {
       setCapacityWarning(false);
       return;
     }
-    const veh = vehicles.find(v => v.registrationNumber === selectedVehReg);
+    const veh = vehicles.find(v => v.id.toString() === selectedVehReg.toString());
     if (!veh) return;
 
     const weight = parseInt(cargoWeight, 10) || 0;
-    if (weight > veh.maxCapacity) {
+    if (weight > veh.max_capacity) {
       setCapacityWarning(true);
-      setCapacityLimit(veh.maxCapacity);
-      setExcessWeight(weight - veh.maxCapacity);
+      setCapacityLimit(veh.max_capacity);
+      setExcessWeight(weight - veh.max_capacity);
     } else {
       setCapacityWarning(false);
     }
@@ -82,10 +105,10 @@ export default function Trips() {
 
     setSource(trip.source);
     setDestination(trip.destination);
-    setSelectedVehReg(trip.vehicle);
-    setSelectedDrvName(trip.driver);
-    setCargoWeight(trip.cargoWeight);
-    setPlannedDistance(trip.plannedDistance);
+    setSelectedVehReg(trip.vehicle_id);
+    setSelectedDrvName(trip.driver_id);
+    setCargoWeight(trip.cargo_weight);
+    setPlannedDistance(trip.planned_distance);
     setActiveStep(trip.status);
   };
 
@@ -102,7 +125,7 @@ export default function Trips() {
   };
 
   // Submit Handler: Dispatch Trip
-  const handleDispatchSubmit = (e) => {
+  const handleDispatchSubmit = async (e) => {
     e.preventDefault();
 
     if (selectedTripId) {
@@ -116,79 +139,55 @@ export default function Trips() {
       return;
     }
 
-    // Generate TRIP ID
+    // Generate TRIP Number
     const seq = trips.length + 1;
-    const tripId = `TRIP-${(seq + 1000).toString()}`; // TRIP-1002 style
+    const tripNumber = `TRIP-${(seq + 1000).toString()}`; // TRIP-1002 style
 
     const newTrip = {
-      id: tripId,
+      trip_number: tripNumber,
       source: source.trim(),
       destination: destination.trim(),
-      vehicle: selectedVehReg,
-      driver: selectedDrvName,
-      cargoWeight: parseInt(cargoWeight, 10),
-      plannedDistance: parseInt(plannedDistance, 10),
-      status: 'Dispatched'
+      cargo_weight: parseInt(cargoWeight, 10),
+      planned_distance: parseInt(plannedDistance, 10),
+      status: 'Draft'
     };
 
-    // Update statuses (Business rules enforcements)
-    const updatedVehicles = vehicles.map(v => {
-      if (v.registrationNumber === selectedVehReg) return { ...v, status: 'On Trip' };
-      return v;
-    });
+    try {
+      // 1. Create Draft Trip
+      const createRes = await api.post('/trips', newTrip);
+      const createdTripId = createRes.data.id;
 
-    const updatedDrivers = drivers.map(d => {
-      if (d.name === selectedDrvName) return { ...d, status: 'On Trip' };
-      return d;
-    });
+      // 2. Dispatch Trip
+      await api.post(`/trips/${createdTripId}/dispatch`, {
+        vehicle_id: parseInt(selectedVehReg, 10),
+        driver_id: parseInt(selectedDrvName, 10)
+      });
 
-    const updatedTrips = [...trips, newTrip];
-
-    mockDb.saveTrips(updatedTrips);
-    mockDb.saveVehicles(updatedVehicles);
-    mockDb.saveDrivers(updatedDrivers);
-
-    setTrips(updatedTrips);
-    setVehicles(updatedVehicles);
-    setDrivers(updatedDrivers);
-
-    handleResetForm();
+      // Refresh Data
+      fetchData();
+      handleResetForm();
+    } catch (err) {
+      alert(err.message || 'Failed to dispatch trip. Please check business rules (e.g. driver license).');
+    }
   };
 
   // Lifecycle transitions: Cancel Trip
-  const handleCancelTrip = (trip) => {
+  const handleCancelTrip = async (trip) => {
     if (window.confirm("Are you sure you want to cancel this trip? Vehicle & Driver will return to Available.")) {
-      const updatedTrips = trips.map(t => {
-        if (t.id === trip.id) return { ...t, status: 'Cancelled' };
-        return t;
-      });
-
-      const updatedVehicles = vehicles.map(v => {
-        if (v.registrationNumber === trip.vehicle) return { ...v, status: 'Available' };
-        return v;
-      });
-
-      const updatedDrivers = drivers.map(d => {
-        if (d.name === trip.driver) return { ...d, status: 'Available' };
-        return d;
-      });
-
-      mockDb.saveTrips(updatedTrips);
-      mockDb.saveVehicles(updatedVehicles);
-      mockDb.saveDrivers(updatedDrivers);
-
-      setTrips(updatedTrips);
-      setVehicles(updatedVehicles);
-      setDrivers(updatedDrivers);
-
-      handleResetForm();
+      try {
+        await api.post(`/trips/${trip.id}/cancel`);
+        fetchData();
+        handleResetForm();
+      } catch (err) {
+        alert(err.message || 'Failed to cancel trip.');
+      }
     }
   };
 
   // Lifecycle transitions: Open Complete modal
   const handleOpenCompleteModal = (trip) => {
-    const veh = vehicles.find(v => v.registrationNumber === trip.vehicle);
-    const suggestedOdo = veh ? veh.odometer + trip.plannedDistance : 0;
+    const veh = vehicles.find(v => v.id === trip.vehicle_id);
+    const suggestedOdo = veh ? veh.odometer + trip.planned_distance : 0;
 
     setCompTripId(trip.id);
     setCompOdometer(suggestedOdo);
@@ -200,7 +199,7 @@ export default function Trips() {
   };
 
   // Complete Trip Form Submission
-  const handleCompleteSubmit = (e) => {
+  const handleCompleteSubmit = async (e) => {
     e.preventDefault();
     setOdoError('');
 
@@ -210,7 +209,7 @@ export default function Trips() {
     const parsedTolls = parseInt(compExpenses, 10);
 
     const trip = trips.find(t => t.id === compTripId);
-    const veh = vehicles.find(v => v.registrationNumber === trip.vehicle);
+    const veh = vehicles.find(v => v.id === trip.vehicle_id);
 
     // Odometer Validation rule
     if (veh && parsedOdo <= veh.odometer) {
@@ -218,59 +217,40 @@ export default function Trips() {
       return;
     }
 
-    // 1. Update Trip, Driver, and Vehicle
-    const updatedTrips = trips.map(t => {
-      if (t.id === compTripId) return { ...t, status: 'Completed' };
-      return t;
-    });
+    try {
+      // 1. Log Fuel (via Finance module if we had it mapped to frontend api, but let's just complete the trip for now)
+      if (parsedLiters > 0 || parsedFuelCost > 0) {
+        await api.post('/finance/fuel-logs', {
+          vehicle_id: trip.vehicle_id,
+          liters: parsedLiters,
+          cost: parsedFuelCost,
+          date: new Date().toISOString()
+        }).catch(e => console.warn('Fuel log API error/missing', e));
+      }
 
-    const updatedVehicles = vehicles.map(v => {
-      if (v.registrationNumber === trip.vehicle) return { ...v, odometer: parsedOdo, status: 'Available' };
-      return v;
-    });
+      // 2. Log Expenses
+      if (parsedTolls > 0) {
+        await api.post('/finance/expenses', {
+          vehicle_id: trip.vehicle_id,
+          description: 'Toll/Trip Taxes',
+          amount: parsedTolls,
+          date: new Date().toISOString(),
+          category: 'Tolls'
+        }).catch(e => console.warn('Expense API error/missing', e));
+      }
 
-    const updatedDrivers = drivers.map(d => {
-      if (d.name === trip.driver) return { ...d, status: 'Available' };
-      return d;
-    });
-
-    // 2. Log Fuel
-    const fuelLogs = mockDb.getFuelLogs();
-    const fuelSeq = fuelLogs.length + 1;
-    fuelLogs.push({
-      id: `FUEL-${fuelSeq.toString().padStart(4, '0')}`,
-      vehicle: trip.vehicle,
-      liters: parsedLiters,
-      cost: parsedFuelCost,
-      date: new Date().toISOString().split('T')[0]
-    });
-
-    // 3. Log Expense
-    const expenses = mockDb.getExpenses();
-    if (parsedTolls > 0) {
-      const expSeq = expenses.length + 1;
-      expenses.push({
-        id: `EXP-${expSeq.toString().padStart(4, '0')}`,
-        vehicle: trip.vehicle,
-        description: 'Toll/Trip Taxes',
-        amount: parsedTolls,
-        date: new Date().toISOString().split('T')[0],
-        category: 'Tolls'
+      // 3. Complete Trip
+      const actualDistance = veh ? (parsedOdo - veh.odometer) : trip.planned_distance;
+      await api.post(`/trips/${compTripId}/complete`, {
+        actual_distance: actualDistance
       });
+
+      fetchData();
+      setIsCompModalOpen(false);
+      handleResetForm();
+    } catch (err) {
+      setOdoError(err.message || 'Failed to complete trip.');
     }
-
-    mockDb.saveTrips(updatedTrips);
-    mockDb.saveVehicles(updatedVehicles);
-    mockDb.saveDrivers(updatedDrivers);
-    mockDb.saveFuelLogs(fuelLogs);
-    mockDb.saveExpenses(expenses);
-
-    setTrips(updatedTrips);
-    setVehicles(updatedVehicles);
-    setDrivers(updatedDrivers);
-
-    setIsCompModalOpen(false);
-    handleResetForm();
   };
 
   // Stepper dot click handler
@@ -391,8 +371,8 @@ export default function Trips() {
                   >
                     <option value="" disabled>Select vehicle...</option>
                     {availableVehicles.map(v => (
-                      <option key={v.registrationNumber} value={v.registrationNumber}>
-                        {v.registrationNumber} - {v.name} ({v.maxCapacity} kg capacity)
+                      <option key={v.id} value={v.id}>
+                        {v.registration_number} - {v.name} ({v.max_capacity} kg capacity)
                       </option>
                     ))}
                   </select>
@@ -423,8 +403,8 @@ export default function Trips() {
                   >
                     <option value="" disabled>Select driver...</option>
                     {availableDrivers.map(d => (
-                      <option key={d.name} value={d.name}>
-                        {d.name} ({d.licenseCategory})
+                      <option key={d.id} value={d.id}>
+                        {d.name} ({d.license_category ? d.license_category.name : 'Unknown'})
                       </option>
                     ))}
                   </select>
@@ -543,8 +523,8 @@ export default function Trips() {
                     }`}
                   >
                     <div className="flex justify-between items-center text-xs">
-                      <span className="font-mono font-bold">{t.id}</span>
-                      <span className="font-medium text-dark-muted">{t.vehicle ? `${t.vehicle} / ${t.driver}` : 'Unassigned'}</span>
+                      <span className="font-mono font-bold">{t.trip_number || t.id}</span>
+                      <span className="font-medium text-dark-muted">{t.vehicle_id ? `Veh: ${t.vehicle_id} / Drv: ${t.driver_id}` : 'Unassigned'}</span>
                     </div>
                     <div className="text-xs font-semibold text-dark-text leading-tight">{t.source} &rarr; {t.destination}</div>
                     <div className="flex justify-between items-center pt-1 mt-0.5">

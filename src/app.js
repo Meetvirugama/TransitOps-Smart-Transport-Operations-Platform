@@ -14,6 +14,15 @@ const lcRoutes = require('./modules/license-categories/license-category.routes')
 const vehicleRoutes = require('./modules/vehicles/vehicle.routes');
 const driverRoutes = require('./modules/drivers/driver.routes');
 const profileRoutes = require('./modules/profiles/profile.routes');
+const fleetRoutes = require('./modules/fleet/availability/availability.routes');
+const tripRoutes = require('./modules/operations/trips/trip.routes');
+const workshopRoutes = require('./modules/maintenance/workshops/workshop.routes');
+const maintenanceRoutes = require('./modules/maintenance/records/maintenance.routes');
+const fuelRoutes = require('./modules/finance/fuel/fuel.routes');
+const expenseRoutes = require('./modules/finance/expenses/expense.routes');
+const revenueRoutes = require('./modules/finance/revenue/revenue.routes');
+const financeRoutes = require('./modules/finance/calculator/finance.routes');
+const analyticsRoutes = require('./modules/analytics/dashboard/dashboard.routes');
 
 const app = express();
 
@@ -35,6 +44,15 @@ app.use('/api/license-categories', lcRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/drivers', driverRoutes);
 app.use('/api/profiles', profileRoutes);
+app.use('/api/fleet', fleetRoutes);
+app.use('/api/trips', tripRoutes);
+app.use('/api/workshops', workshopRoutes);
+app.use('/api/maintenance', maintenanceRoutes);
+app.use('/api/fuel', fuelRoutes);
+app.use('/api/expenses', expenseRoutes);
+app.use('/api/revenues', revenueRoutes);
+app.use('/api/finance', financeRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Health Check
 app.get('/health', async (req, res) => {

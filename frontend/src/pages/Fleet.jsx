@@ -7,13 +7,16 @@ export default function Fleet() {
   const [typeFilter, setTypeFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [vehicleTypesList, setVehicleTypesList] = useState([]);
 
   const fetchVehicles = async () => {
     try {
-      const res = await api.get('/vehicles', { params: { limit: 100 } });
-      if (res.success) {
-        setVehicles(res.data);
-      }
+      const [vehRes, typeRes] = await Promise.all([
+        api.get('/vehicles', { params: { limit: 100 } }),
+        api.get('/vehicle-types', { params: { limit: 100 } })
+      ]);
+      if (vehRes.success) setVehicles(vehRes.data);
+      if (typeRes.success) setVehicleTypesList(typeRes.data);
     } catch (err) {
       console.error('Failed to fetch vehicles', err);
     }
@@ -70,7 +73,8 @@ export default function Fleet() {
     setRegNo(veh.registration_number);
     setName(veh.name);
     // Try to safely handle if backend sends an object or just ID. If object, use name. If missing, default.
-    setType(veh.vehicle_type ? veh.vehicle_type.name : 'Van');
+    const defaultTypeName = vehicleTypesList.length > 0 ? vehicleTypesList[0].name : '';
+    setType(veh.vehicle_type ? veh.vehicle_type.name : defaultTypeName);
     setCapacity(veh.max_capacity);
     setOdometer(veh.odometer);
     setCost(veh.acquisition_cost);
@@ -102,7 +106,7 @@ export default function Fleet() {
     const payload = {
       registration_number: formattedReg,
       name: name.trim(),
-      vehicle_type_id: 1, // Defaulting for now, full implementation would fetch vehicle types
+      vehicle_type_id: vehicleTypesList.find(vt => vt.name === type)?.id || 1,
       max_capacity: parsedCapacity,
       odometer: parsedOdo,
       acquisition_cost: parsedCost,
@@ -148,9 +152,9 @@ export default function Fleet() {
             }}
           >
             <option value="All">Type: All</option>
-            <option value="Van">Van</option>
-            <option value="Truck">Truck</option>
-            <option value="Mini">Mini</option>
+            {vehicleTypesList.map(vt => (
+              <option key={vt.id} value={vt.name}>{vt.name}</option>
+            ))}
           </select>
 
           <select
@@ -295,9 +299,9 @@ export default function Fleet() {
               onChange={(e) => setType(e.target.value)}
               className="w-full bg-[#0B0F19] border border-dark-border rounded-md px-4 py-2.5 outline-none focus:border-brand text-dark-text cursor-pointer"
             >
-              <option value="Van">Van</option>
-              <option value="Truck">Truck</option>
-              <option value="Mini">Mini</option>
+              {vehicleTypesList.map(vt => (
+                <option key={vt.id} value={vt.name}>{vt.name}</option>
+              ))}
             </select>
           </div>
 

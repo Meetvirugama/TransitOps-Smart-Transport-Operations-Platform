@@ -5,6 +5,9 @@ export default function Dashboard() {
   const [vehicleType, setVehicleType] = useState('All');
   const [regionFilter, setRegionFilter] = useState('All');
   
+  const [vehicleTypesList, setVehicleTypesList] = useState([]);
+  const [regionsList, setRegionsList] = useState([]);
+  
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState({
     activeCount: 0,
@@ -21,8 +24,22 @@ export default function Dashboard() {
   const [recentTrips, setRecentTrips] = useState([]);
 
   useEffect(() => {
+    fetchFilters();
     fetchDashboardData();
   }, [vehicleType, regionFilter]);
+
+  const fetchFilters = async () => {
+    try {
+      const [vtRes, regRes] = await Promise.all([
+        api.get('/vehicle-types', { params: { limit: 100 } }),
+        api.get('/regions', { params: { limit: 100 } })
+      ]);
+      if (vtRes.success) setVehicleTypesList(vtRes.data);
+      if (regRes.success) setRegionsList(regRes.data);
+    } catch (err) {
+      console.error('Failed to fetch filters', err);
+    }
+  };
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -71,8 +88,8 @@ export default function Dashboard() {
       {/* Dashboard Filters */}
       <div className="flex gap-4 flex-wrap">
         {[
-          { label: 'Vehicle Type', value: vehicleType, onChange: setVehicleType, options: ['All', 'Van', 'Truck', 'Mini'] },
-          { label: 'Region', value: regionFilter, onChange: setRegionFilter, options: ['All', 'North', 'South', 'East', 'West'] }
+          { label: 'Vehicle Type', value: vehicleType, onChange: setVehicleType, options: ['All', ...vehicleTypesList.map(v => v.name)] },
+          { label: 'Region', value: regionFilter, onChange: setRegionFilter, options: ['All', ...regionsList.map(r => r.name)] }
         ].map((f) => (
           <div key={f.label} className="flex flex-col gap-1.5">
             <label className="font-mono text-[9px] text-dark-muted uppercase font-bold tracking-wider">{f.label}</label>

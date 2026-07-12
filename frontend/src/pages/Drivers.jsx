@@ -6,13 +6,16 @@ export default function Drivers() {
   const [drivers, setDrivers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStatusFilter, setActiveStatusFilter] = useState('All');
+  const [categoriesList, setCategoriesList] = useState([]);
 
   const fetchDrivers = async () => {
     try {
-      const res = await api.get('/drivers', { params: { limit: 100 } });
-      if (res.success) {
-        setDrivers(res.data);
-      }
+      const [drvRes, catRes] = await Promise.all([
+        api.get('/drivers', { params: { limit: 100 } }),
+        api.get('/license-categories', { params: { limit: 100 } })
+      ]);
+      if (drvRes.success) setDrivers(drvRes.data);
+      if (catRes.success) setCategoriesList(catRes.data);
     } catch (err) {
       console.error('Failed to fetch drivers', err);
     }
@@ -63,7 +66,8 @@ export default function Drivers() {
     setEditingIdx(d.id); // store ID instead of idx
     setName(d.name);
     setLicNo(d.license_number);
-    setCategory(d.license_category ? d.license_category.name : 'LMV');
+    const defaultCatName = categoriesList.length > 0 ? categoriesList[0].name : '';
+    setCategory(d.license_category ? d.license_category.name : defaultCatName);
     setExpiry(d.license_expiry_date ? d.license_expiry_date.substring(0, 10) : '');
     setContact(d.contact_number);
     setSafetyScore(d.safety_score);
@@ -98,7 +102,7 @@ export default function Drivers() {
     const payload = {
       name: name.trim(),
       license_number: licNo.trim().toUpperCase(),
-      license_category_id: 1, // Defaulting for now
+      license_category_id: categoriesList.find(c => c.name === category)?.id || 1,
       license_expiry_date: expiry,
       contact_number: contact.trim(),
       safety_score: parsedSafety,
@@ -298,14 +302,17 @@ export default function Drivers() {
 
           <div className="flex flex-col gap-1.5">
             <label className="font-mono text-[9px] text-dark-muted uppercase font-bold tracking-wider">License Category</label>
-            <input
-              type="text"
+            <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full bg-[#0B0F19] border border-dark-border rounded-md px-4 py-2.5 outline-none focus:border-brand text-dark-text"
-              placeholder="LMV"
+              className="w-full bg-[#0B0F19] border border-dark-border rounded-md px-4 py-2.5 outline-none focus:border-brand text-dark-text cursor-pointer"
               required
-            />
+            >
+              <option value="" disabled>Select category...</option>
+              {categoriesList.map(c => (
+                <option key={c.id} value={c.name}>{c.name}</option>
+              ))}
+            </select>
           </div>
 
           <div className="flex flex-col gap-1.5">

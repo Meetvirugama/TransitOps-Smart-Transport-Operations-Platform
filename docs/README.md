@@ -1,6 +1,6 @@
 # TransitOps — Complete Technical Reference
 
-> Smart Transport Operations Platform — API-only backend. No frontend.
+> Smart Transport Operations Platform — Fullstack Monorepo with React Frontend and Express Backend. All dummy mock databases have been completely removed.
 
 ---
 
@@ -591,8 +591,9 @@ node scripts/init-layer1-db.js
 node scripts/init-layer3-db.js
 node scripts/init-layer4-db.js
 node scripts/init-layer5-db.js
+node scripts/seed-users.js
 
-# 3. Start dev server
+# 3. Start dev server for backend and frontend
 npm run dev
 
 # 4. Health check

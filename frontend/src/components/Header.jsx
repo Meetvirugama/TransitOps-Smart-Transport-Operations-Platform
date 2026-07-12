@@ -1,7 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { mockDb } from '../db/mockDb';
 
 const menuItems = [
   { path: '/dashboard',     label: 'Dashboard'      },
@@ -57,14 +56,6 @@ export default function Header() {
     setDropdownOpen(false);
     logout();
     navigate('/login');
-  };
-
-  const handleResetDb = () => {
-    if (window.confirm('Reset all data to default Indian seed values? You will be logged out.')) {
-      mockDb.resetDatabase();
-      logout();
-      navigate('/login');
-    }
   };
 
   const displayName = user?.name || user?.email?.split('@')[0] || 'User';
@@ -187,18 +178,6 @@ export default function Header() {
                     </svg>
                   </span>
                   <span className="font-medium">Settings</span>
-                </button>
-
-                <button
-                  onClick={handleResetDb}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#c5cace] hover:bg-[#162129] hover:text-white transition-all duration-150 cursor-pointer text-left"
-                >
-                  <span className="w-5 h-5 flex items-center justify-center text-[#86898c]">
-                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                  </span>
-                  <span className="font-medium">Reset Database</span>
                 </button>
               </div>
 

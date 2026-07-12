@@ -9,23 +9,38 @@ export default function Dashboard() {
   const [regionsList, setRegionsList] = useState([]);
   
   const [loading, setLoading] = useState(true);
-  const [kpis, setKpis] = useState({
-    activeCount: 0,
-    availableCount: 0,
-    inShopCount: 0,
-    retiredCount: 0,
-    activeTripsCount: 0,
-    pendingTripsCount: 0,
-    driversOnDuty: 0,
-    utilizationPct: 0,
-    totalVehicles: 1
-  });
-  
-  const [recentTrips, setRecentTrips] = useState([]);
 
-  const vehicles = useMemo(() => mockDb.getVehicles(), []);
-  const trips    = useMemo(() => mockDb.getTrips(), []);
-  const drivers  = useMemo(() => mockDb.getDrivers(), []);
+  const [vehicles, setVehicles] = useState([]);
+  const [trips, setTrips] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [vehRes, tripRes, drivRes, regRes, typeRes] = await Promise.all([
+          api.get('/vehicles'),
+          api.get('/trips'),
+          api.get('/drivers'),
+          api.get('/regions'),
+          api.get('/vehicle-types')
+        ]);
+        
+        setVehicles(vehRes.data || []);
+        setTrips(tripRes.data || []);
+        setDrivers(drivRes.data || []);
+        
+        const rList = (regRes.data || []).map(r => r.name);
+        const tList = (typeRes.data || []).map(t => t.name);
+        setRegionsList(['All', ...rList]);
+        setVehicleTypesList(['All', ...tList]);
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const filteredVehicles = useMemo(() => {
     return vehicles.filter(v => {
@@ -152,9 +167,9 @@ export default function Dashboard() {
       {/* Dashboard Filters */}
       <div className="flex gap-3 flex-wrap items-center">
         {[
-          { label: 'Vehicle Type', value: vehicleType, onChange: setVehicleType, options: ['All', 'Van', 'Truck', 'Mini'] },
+          { label: 'Vehicle Type', value: vehicleType, onChange: setVehicleType, options: vehicleTypesList.length > 0 ? vehicleTypesList : ['All'] },
           { label: 'Status',       value: statusFilter, onChange: setStatusFilter, options: ['All', 'Available', 'On Trip', 'In Shop', 'Retired'] },
-          { label: 'Region',       value: regionFilter, onChange: setRegionFilter, options: ['All', 'North', 'South', 'East', 'West'] }
+          { label: 'Region',       value: regionFilter, onChange: setRegionFilter, options: regionsList.length > 0 ? regionsList : ['All'] }
         ].map((f) => (
           <div key={f.label} className="flex flex-col gap-1.5">
             <label className="font-mono text-[9px] text-[#86898c] uppercase font-bold tracking-widest pl-1">{f.label}</label>

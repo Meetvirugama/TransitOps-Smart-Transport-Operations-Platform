@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Fleet from './pages/Fleet';
 import Drivers from './pages/Drivers';
 import Trips from './pages/Trips';
+import Settings from './pages/Settings';
 import Header from './components/Header';
 
 // Protected Route Wrapper
@@ -110,10 +111,7 @@ function AppRoutes() {
       <Route path="/settings" element={
         <ProtectedRoute>
           <Layout>
-            <Placeholder
-              title="8. Portal Settings"
-              desc="Customize user permissions, configure account triggers, modify local database buffers, or perform factory database resets."
-            />
+            <Settings />
           </Layout>
         </ProtectedRoute>
       } />

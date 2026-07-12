@@ -2,16 +2,16 @@ import React, { useRef, useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { mockDb } from '../db/mockDb';
+import { LayoutDashboard, Truck, Users, Route, Wrench, Fuel, BarChart3 } from 'lucide-react';
 
 const menuItems = [
-  { path: '/dashboard',     label: 'Dashboard'      },
-  { path: '/fleet',         label: 'Fleet'           },
-  { path: '/drivers',       label: 'Drivers'         },
-  { path: '/trips',         label: 'Trips'           },
-  { path: '/maintenance',   label: 'Maintenance'     },
-  { path: '/fuel-expenses', label: 'Fuel & Expenses' },
-  { path: '/analytics',     label: 'Analytics'       },
-  // Settings removed from nav — accessed via username dropdown
+  { path: '/dashboard',     label: 'Dashboard',      icon: LayoutDashboard },
+  { path: '/fleet',         label: 'Fleet',           icon: Truck           },
+  { path: '/drivers',       label: 'Drivers',         icon: Users           },
+  { path: '/trips',         label: 'Trips',           icon: Route           },
+  { path: '/maintenance',   label: 'Maintenance',     icon: Wrench          },
+  { path: '/fuel-expenses', label: 'Fuel & Expenses', icon: Fuel            },
+  { path: '/analytics',     label: 'Analytics',       icon: BarChart3       },
 ];
 
 export default function Header() {
@@ -75,15 +75,14 @@ export default function Header() {
   return (
     <header className="h-16 border-b border-[#1e2d38] flex items-center justify-between px-6 shrink-0 select-none bg-[#0a0f14] w-full z-50 relative">
 
-      {/* Left: Logo + Nav */}
       <div className="flex items-center gap-6">
         {/* Brand */}
         <div className="flex items-center gap-2.5">
-          <div className="grid grid-cols-3 gap-[2px] w-6 h-6" aria-hidden="true">
-            {Array.from({ length: 9 }).map((_, i) => (
-              <span key={i} className="bg-[#4ff7d1] rounded-[1px] opacity-90" />
-            ))}
-          </div>
+          <svg width="22" height="22" viewBox="0 0 110 110" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
+            <path d="M25 80 Q25 40 55 40 Q85 40 85 10" stroke="#4ff7d1" strokeWidth="8" fill="none" strokeLinecap="round"/>
+            <circle cx="25" cy="80" r="8" fill="#4ff7d1"/>
+            <circle cx="85" cy="10" r="8" fill="#4ff7d1"/>
+          </svg>
           <h2 className="font-heading text-sm font-extrabold text-white tracking-tight">TransitOps</h2>
         </div>
 
@@ -105,16 +104,17 @@ export default function Header() {
               to={item.path}
               onMouseEnter={handleMouseEnter}
               className={({ isActive }) =>
-                `px-3.5 py-2 rounded-full text-xs font-semibold tracking-tight relative z-10 transition-all duration-150 ${
+                `flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold tracking-tight relative z-10 transition-all duration-150 ${
                   isActive ? 'text-[#4ff7d1] font-bold' : 'text-[#b6b8ba] hover:text-white'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
+                  <item.icon size={12} className="flex-shrink-0" />
                   <span>{item.label}</span>
                   {isActive && (
-                    <span className="absolute bottom-1 left-3.5 right-3.5 h-[2px] bg-[#4ff7d1] rounded-full animate-pulse-slow" />
+                    <span className="absolute bottom-1 left-3 right-3 h-[2px] bg-[#4ff7d1] rounded-full animate-pulse-slow" />
                   )}
                 </>
               )}
@@ -157,7 +157,7 @@ export default function Header() {
 
           {/* Dropdown Panel */}
           {dropdownOpen && (
-            <div className="absolute right-0 top-[calc(100%+10px)] w-72 glass-panel border border-[#1e2d38] rounded-2xl overflow-hidden z-[100] shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+            <div className="absolute right-0 top-[calc(100%+10px)] w-72 bg-gradient-to-b from-[#162129] to-[#111820] border border-[#1e2d38] rounded-2xl overflow-hidden z-[100] shadow-[0_20px_60px_rgba(0,0,0,0.75)]">
               
               {/* Top shimmer */}
               <div className="h-px w-full bg-gradient-to-r from-transparent via-[#4ff7d1]/30 to-transparent" />

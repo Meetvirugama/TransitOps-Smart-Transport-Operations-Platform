@@ -45,8 +45,8 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        heading: ['Inter', 'sans-serif'], // Turso uses Inter globally
+        sans: ['Geist Sans', 'Inter', 'sans-serif'],
+        heading: ['Geist Sans', 'Inter', 'sans-serif'], // Geist uses Inter as substitute
         mono: ['Fira Code', 'monospace'],
       },
       letterSpacing: {

@@ -1,682 +1,168 @@
-> ⚠️ **Note:** Do not implement frontend for this layer.
+> ⚠️ **Note:** No frontend. API-only backend platform.
 
-# TransitOps Architecture
+# TransitOps — Layer 3: Operations Layer (Trip Lifecycle)
 
-# Layer 3 — Operations & Workflow Layer
+**Status: ✅ COMPLETE**
 
 ## Purpose
 
-The Operations Layer is the heart of TransitOps.
-
-It executes all business workflows by orchestrating multiple modules from lower layers.
-
-Unlike Layer 1 (Master Data) and Layer 2 (Fleet Availability), this layer contains **business processes**, **state transitions**, and **business rule enforcement**.
-
-Every operational action performed by a user is executed through this layer.
+Layer 3 is the **operational core** of TransitOps. It manages the complete trip lifecycle: creation, dispatch, completion, and cancellation. It enforces all mandatory business rules defined in the hackathon spec and orchestrates cross-module workflows by calling Layer 2 (availability) and querying Layer 1 (vehicles, drivers).
 
 ---
 
-# Position in Architecture
+## Folder Structure
 
 ```
-Presentation Layer
-        │
-API Layer
-        │
-────────────────────────────
-Layer 3 - Operations
-────────────────────────────
-        │
-Layer 2 - Fleet Availability
-        │
-Layer 1 - Master Data
-        │
-Layer 0 - Foundation
+src/modules/operations/trips/
+├── trip.routes.js       → Route definitions with role guards
+├── trip.controller.js   → Request handlers (uses shared catchAsync)
+├── trip.service.js      → All business logic, business rules, orchestration
+├── trip.repository.js   → SQL queries for trips table
+└── trip.validator.js    → Zod schemas for all trip operations
 ```
 
 ---
 
-# Responsibilities
+## Database Table
 
-- Trip Creation
-- Trip Dispatch
-- Trip Completion
-- Trip Cancellation
-- Vehicle Assignment
-- Driver Assignment
-- Workflow Execution
-- Business Rule Validation
-- Operational Status Updates
-
----
-
-# Core Modules
-
+### `trips`
+```sql
+id, trip_number [UNIQUE], source, destination,
+vehicle_id → vehicles,
+driver_id → drivers,
+cargo_weight, planned_distance, actual_distance,
+status ['Draft'|'Dispatched'|'Completed'|'Cancelled'],
+start_time, end_time,
+created_by → users,
+created_at, updated_at, is_deleted
 ```
-Operations
-
-│
-├── Trip Management
-├── Dispatch Workflow
-├── Completion Workflow
-├── Cancellation Workflow
-├── Assignment Engine
-├── Workflow Engine
-└── Business Rule Engine
-```
-
----
-
-# Trip Management
-
-Purpose
-
-Manage the complete lifecycle of transport trips.
 
 ---
 
 ## Trip Lifecycle
 
 ```
-Draft
-
-↓
-
-Dispatched
-
-↓
-
-Completed
-```
-
-Alternative path
-
-```
-Draft
-
-↓
-
-Cancelled
-```
-
-Only valid transitions are allowed.
-
----
-
-# Trip Entity
-
-```
-Trip ID
-
-Trip Number
-
-Source
-
-Destination
-
-Vehicle
-
-Driver
-
-Cargo Weight
-
-Planned Distance
-
-Actual Distance
-
-Start Time
-
-End Time
-
-Status
-
-Created By
-
-Created At
+POST /api/trips          → Creates trip in 'Draft' state (no vehicle/driver yet)
+         ↓
+POST /api/trips/:id/dispatch → Validates + assigns vehicle + driver → 'Dispatched'
+         ↓                         ↓
+         ↓              POST /api/trips/:id/cancel → releases resources → 'Cancelled'
+POST /api/trips/:id/complete → releases resources + updates odometer → 'Completed'
 ```
 
 ---
 
-# Trip Status
+## Business Rules Enforced in `trip.service.js`
 
-```
-Draft
+All rules are enforced in `dispatchTrip()`:
 
-Dispatched
+| Rule | Error if violated |
+|---|---|
+| Trip must be in `Draft` state | `Cannot dispatch trip in [X] state` |
+| Vehicle must exist | `Vehicle not found` |
+| Vehicle must be `Available` | `Cannot dispatch vehicle. Current status is [X]` |
+| Vehicle cannot be `Retired` | `Cannot dispatch a Retired vehicle` |
+| Vehicle cannot be `In Shop` | `Cannot dispatch a vehicle that is In Shop` |
+| `cargo_weight` ≤ `vehicle.max_capacity` | `Cargo weight (X kg) exceeds vehicle capacity (Y kg)` |
+| Driver must exist | `Driver not found` |
+| Driver cannot be `Suspended` | `Cannot assign a Suspended driver to a trip` |
+| `driver.license_expiry_date` ≥ today | `Driver license expired on [date]. Renew before dispatching.` |
+| Driver must be `Available` | `Cannot assign driver. Current status is [X]` |
 
-Completed
+---
 
-Cancelled
+## Dispatch Workflow (step-by-step)
+
+```javascript
+// trip.service.js — dispatchTrip()
+
+1. Fetch trip → verify status = 'Draft'
+2. Fetch vehicle → check Retired/InShop/Available
+3. Check cargo_weight ≤ vehicle.max_capacity
+4. Fetch driver → check Suspended / license expiry / Available
+5. availabilityService.reserveVehicle(vehicle_id)   ← FOR UPDATE lock
+6. availabilityService.reserveDriver(driver_id)     ← FOR UPDATE lock
+   [if step 6 fails → releaseVehicle() automatically]
+7. changeVehicleStatus(vehicle_id, 'On Trip')
+8. changeDriverStatus(driver_id, 'On Trip')
+9. tripRepo.update(tripId, { vehicle_id, driver_id, start_time, status: 'Dispatched' })
 ```
 
 ---
 
-# Assignment Engine
+## Complete Trip Workflow
 
-Purpose
+```javascript
+// trip.service.js — completeTrip()
 
-Assign available resources to a trip.
-
-Resources
-
-```
-Vehicle
-
-Driver
-```
-
-Assignment Process
-
-```
-Create Trip
-
-↓
-
-Find Available Vehicle
-
-↓
-
-Find Available Driver
-
-↓
-
-Validate Capacity
-
-↓
-
-Reserve Resources
-
-↓
-
-Save Trip
+1. Fetch trip → verify status = 'Dispatched'
+2. availabilityService.releaseVehicle(vehicle_id) → status = 'Available'
+3. Fetch vehicle → newOdometer = vehicle.odometer + actual_distance
+4. vehicleRepo.update(vehicle_id, { odometer: newOdometer })  ← odometer auto-increment
+5. availabilityService.releaseDriver(driver_id) → status = 'Available'
+6. tripRepo.update(tripId, { actual_distance, end_time, status: 'Completed' })
 ```
 
 ---
 
-# Workflow Engine
+## Cancel Trip Workflow
 
-Coordinates every business process.
+```javascript
+// trip.service.js — cancelTrip()
 
-Available workflows
-
-```
-Create Trip
-
-Dispatch Trip
-
-Complete Trip
-
-Cancel Trip
-```
-
-Each workflow is independent.
-
----
-
-# Workflow 1 — Create Trip
-
-```
-Receive Request
-
-↓
-
-Validate Input
-
-↓
-
-Check Vehicle Exists
-
-↓
-
-Check Driver Exists
-
-↓
-
-Validate Cargo Weight
-
-↓
-
-Create Draft Trip
-
-↓
-
-Return Trip
-```
-
-No resource status changes occur.
-
----
-
-# Workflow 2 — Dispatch Trip
-
-```
-Draft Trip
-
-↓
-
-Check Vehicle Available
-
-↓
-
-Check Driver Available
-
-↓
-
-Validate License
-
-↓
-
-Validate Capacity
-
-↓
-
-Reserve Vehicle
-
-↓
-
-Reserve Driver
-
-↓
-
-Update Vehicle Status
-
-↓
-
-Update Driver Status
-
-↓
-
-Change Trip Status
-
-↓
-
-Dispatched
+1. Fetch trip → verify status is not 'Completed'/'Cancelled'
+2. If 'Dispatched' → releaseVehicle() + releaseDriver()
+3. tripRepo.update(tripId, { status: 'Cancelled', end_time })
 ```
 
 ---
 
-# Workflow 3 — Complete Trip
+## API Endpoints
 
+| Method | Endpoint | Roles | Description |
+|---|---|---|---|
+| GET | `/api/trips?status=Dispatched&vehicle_id=1` | All | List trips (filterable) |
+| GET | `/api/trips/:id` | All | Get single trip |
+| POST | `/api/trips` | Admin, Fleet Manager, Dispatcher | Create trip (Draft) |
+| POST | `/api/trips/:id/dispatch` | Admin, Fleet Manager, Dispatcher | Dispatch → assign resources |
+| POST | `/api/trips/:id/complete` | Admin, Fleet Manager, Dispatcher | Complete → release + odometer |
+| POST | `/api/trips/:id/cancel` | Admin, Fleet Manager, Dispatcher | Cancel → release if Dispatched |
+
+**Dispatch body:**
+```json
+{ "vehicle_id": 1, "driver_id": 2 }
 ```
-Trip Completed
 
-↓
-
-Enter Final Odometer
-
-↓
-
-Enter Fuel Consumed
-
-↓
-
-Update Trip Distance
-
-↓
-
-Release Vehicle
-
-↓
-
-Release Driver
-
-↓
-
-Vehicle Available
-
-↓
-
-Driver Available
-
-↓
-
-Trip Completed
+**Complete body:**
+```json
+{ "actual_distance": 450.5 }
 ```
 
 ---
 
-# Workflow 4 — Cancel Trip
+## Cross-Module Imports
 
-```
-Cancel Request
-
-↓
-
-Check Status
-
-↓
-
-Release Vehicle
-
-↓
-
-Release Driver
-
-↓
-
-Trip Cancelled
+```javascript
+// trip.service.js imports:
+const tripRepo           = require('./trip.repository');
+const availabilityService = require('../../fleet/availability/availability.service');
+const vehicleRepo        = require('../../vehicles/vehicle.repository');
+const driverRepo         = require('../../drivers/driver.repository');
+const { VEHICLE_STATUS, DRIVER_STATUS } = require('../../../common/constants');
 ```
 
 ---
 
-# Business Rule Engine
-
-Centralized validation.
-
-Rules
-
----
-
-## Vehicle Rules
-
-```
-Vehicle Exists
-
-Vehicle Available
-
-Vehicle Not Retired
-
-Vehicle Not In Shop
-
-Vehicle Capacity Valid
-```
-
----
-
-## Driver Rules
-
-```
-Driver Exists
-
-Driver Available
-
-License Valid
-
-Driver Not Suspended
-
-Driver Not Off Duty
-```
-
----
-
-## Trip Rules
-
-```
-Source Required
-
-Destination Required
-
-Cargo Weight Required
-
-Distance Required
-```
-
----
-
-## Capacity Rule
-
-```
-Cargo Weight
-
-≤
-
-Vehicle Maximum Capacity
-```
-
-Otherwise
-
-```
-Reject Dispatch
-```
-
----
-
-## License Rule
-
-```
-Current Date
-
-<
-
-License Expiry
-```
-
-Otherwise
-
-```
-Reject Dispatch
-```
-
----
-
-## Duplicate Assignment Rule
-
-Vehicle
-
-```
-One Vehicle
-
-↓
-
-One Active Trip
-```
-
-Driver
-
-```
-One Driver
-
-↓
-
-One Active Trip
-```
-
----
-
-# Folder Structure
-
-```
-src/
-
-operations/
-
-├── trips/
-│   ├── trip.controller.js
-│   ├── trip.service.js
-│   ├── trip.repository.js
-│   ├── trip.validator.js
-│   ├── trip.routes.js
-│   └── trip.model.js
-│
-├── workflows/
-│   ├── createTrip.workflow.js
-│   ├── dispatchTrip.workflow.js
-│   ├── completeTrip.workflow.js
-│   └── cancelTrip.workflow.js
-│
-├── assignment/
-│
-└── rules/
-```
-
----
-
-# API Endpoints
-
-```
-GET /trips
-
-GET /trips/:id
-
-POST /trips
-
-PUT /trips/:id
-
-DELETE /trips/:id
-```
-
-Workflow APIs
-
-```
-POST /trips/:id/dispatch
-
-POST /trips/:id/complete
-
-POST /trips/:id/cancel
-```
-
----
-
-# Database Tables
-
-```
-trips
-```
-
-Relationships
-
-```
-Trip
-
-↓
-
-Vehicle
-
-↓
-
-Driver
-```
-
----
-
-# Request Flow
-
-```
-Dispatcher
-
-↓
-
-Trip Controller
-
-↓
-
-Trip Service
-
-↓
-
-Dispatch Workflow
-
-↓
-
-Business Rules
-
-↓
-
-Availability Layer
-
-↓
-
-Repository
-
-↓
-
-Database
-```
-
----
-
-# Interaction With Other Layers
-
-Uses
-
-```
-Layer 0
-
-Authentication
-
-RBAC
-
-Validation
-```
-
-Uses
-
-```
-Layer 1
-
-Vehicles
-
-Drivers
-```
-
-Uses
-
-```
-Layer 2
-
-Availability Service
-
-Reservation
-
-Release
-```
-
-Provides
-
-```
-Layer 4
-
-Maintenance
-
-Layer 5
-
-Finance
-
-Layer 6
-
-Analytics
-```
-
----
-
-# What This Layer Cannot Do
-
-❌ Perform Maintenance
-
-❌ Record Fuel Logs
-
-❌ Record Expenses
-
-❌ Generate Reports
-
-❌ Dashboard KPIs
-
-Those belong to higher layers.
-
----
-
-# Design Principles
-
-- Workflow Driven
-- Business Rules Centralized
-- Thin Controllers
-- Reusable Workflows
-- Transaction Safe
-- Layered Architecture
-- Separation of Concerns
-
----
-
-# Deliverables
-
-Layer 3 is complete when
-
-- Trip CRUD implemented
-- Trip lifecycle implemented
-- Dispatch workflow implemented
-- Completion workflow implemented
-- Cancellation workflow implemented
-- Assignment engine implemented
-- Business rule engine implemented
-- Status transitions implemented
-- Transaction rollback implemented
+## ✅ Completion Checklist
+
+- [x] Trip creation (Draft state)
+- [x] Dispatch with full business rule enforcement (9 rules)
+- [x] License expiry date check at dispatch
+- [x] Suspended driver check at dispatch
+- [x] Retired/In Shop vehicle guard at dispatch
+- [x] Capacity validation (cargo_weight ≤ max_capacity)
+- [x] Race condition prevention (SELECT FOR UPDATE via Layer 2)
+- [x] Rollback on partial failure
+- [x] Trip completion with odometer auto-increment
+- [x] Trip cancellation with resource release
+- [x] Status filtering, pagination on list endpoint

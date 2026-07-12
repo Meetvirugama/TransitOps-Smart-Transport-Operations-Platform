@@ -1,701 +1,234 @@
-> ⚠️ **Note:** Do not implement frontend for this layer.
+> ⚠️ **Note:** No frontend. API-only backend platform.
 
-# TransitOps Architecture
+# TransitOps — Layer 5: Financial Management Layer
 
-# Layer 5 — Financial Management Layer
+**Status: ✅ COMPLETE**
 
 ## Purpose
 
-The Financial Management Layer is responsible for recording, tracking, and calculating all operational costs associated with fleet operations.
-
-This layer consolidates fuel consumption, maintenance expenses, toll charges, and other operational costs into a centralized financial system.
-
-Unlike previous layers, this layer focuses on **cost tracking** rather than operational workflows.
+Layer 5 handles all financial data and calculations: fuel consumption tracking, operational expenses, revenue recording, and financial engines that compute cost, ROI, and fuel efficiency per vehicle.
 
 ---
 
-# Position in Architecture
+## Folder Structure
 
 ```
-Presentation Layer
-        │
-API Layer
-        │
-────────────────────────────
-Layer 6 - Analytics
-────────────────────────────
-        │
-────────────────────────────
-Layer 5 - Financial Management
-────────────────────────────
-        │
-Layer 4 - Maintenance
-        │
-Layer 3 - Operations
-        │
-Layer 2 - Fleet Availability
-        │
-Layer 1 - Master Data
-        │
-Layer 0 - Foundation
-```
-
----
-
-# Responsibilities
-
-- Fuel Log Management
-- Expense Management
-- Operational Cost Calculation
-- Revenue Recording
-- Vehicle Profitability
-- Trip Cost Calculation
-- ROI Calculation
-- Financial Summary
-
-This layer never changes operational status.
-
----
-
-# Core Modules
-
-```
-Financial Management
-
+src/modules/finance/
 │
-├── Fuel Management
-├── Expense Management
-├── Revenue Management
-├── Cost Engine
-├── ROI Engine
-└── Financial Reports
-```
-
----
-
-# Fuel Management
-
-## Purpose
-
-Maintain complete fuel consumption history.
-
-Every fuel refill is recorded.
-
----
-
-## Fuel Log
-
-```
-Fuel Log ID
-
-Vehicle ID
-
-Trip ID (Optional)
-
-Driver ID
-
-Fuel Station
-
-Fuel Quantity (Liters)
-
-Price Per Liter
-
-Total Cost
-
-Odometer Reading
-
-Fuel Date
-
-Remarks
-```
-
----
-
-# Fuel Workflow
-
-```
-Vehicle Refuel
-
-↓
-
-Validate Vehicle
-
-↓
-
-Record Fuel
-
-↓
-
-Calculate Total Cost
-
-↓
-
-Save Fuel Log
-```
-
----
-
-# Fuel Validation Rules
-
-Fuel Quantity
-
-```
-> 0
-```
-
-Price
-
-```
->= 0
-```
-
-Vehicle
-
-```
-Must Exist
-```
-
-Odometer
-
-```
-Cannot decrease
-```
-
----
-
-# Expense Management
-
-## Purpose
-
-Track operational expenses other than fuel.
-
----
-
-# Expense Types
-
-```
-Toll
-
-Parking
-
-Repair
-
-Maintenance
-
-Insurance
-
-Fine
-
-Permit
-
-Cleaning
-
-Other
-```
-
----
-
-## Expense Entity
-
-```
-Expense ID
-
-Vehicle ID
-
-Trip ID (Optional)
-
-Expense Type
-
-Amount
-
-Expense Date
-
-Description
-
-Created By
-```
-
----
-
-# Expense Workflow
-
-```
-Expense Request
-
-↓
-
-Validate Vehicle
-
-↓
-
-Validate Amount
-
-↓
-
-Save Expense
-
-↓
-
-Update Financial Summary
-```
-
----
-
-# Revenue Management
-
-Purpose
-
-Record revenue earned by completed trips.
-
----
-
-## Revenue Entity
-
-```
-Revenue ID
-
-Trip ID
-
-Vehicle ID
-
-Customer
-
-Revenue Amount
-
-Payment Status
-
-Invoice Number
-
-Received Date
-```
-
----
-
-# Cost Engine
-
-Purpose
-
-Automatically calculate operational costs.
-
----
-
-## Vehicle Cost
-
-```
-Fuel Cost
-
-+
-
-Maintenance Cost
-
-+
-
-Operational Expenses
-
-=
-
-Total Vehicle Cost
-```
-
----
-
-## Trip Cost
-
-```
-Fuel
-
-+
-
-Expenses
-
-=
-
-Trip Cost
-```
-
----
-
-# Fuel Efficiency Engine
-
-Purpose
-
-Calculate vehicle efficiency.
-
-Formula
-
-```
-Fuel Efficiency
-
-=
-
-Distance Travelled
-
-/
-
-Fuel Consumed
-```
-
-Example
-
-```
-500 KM
-
-/
-
-40 Liters
-
-=
-
-12.5 KM/L
-```
-
----
-
-# ROI Engine
-
-Purpose
-
-Calculate vehicle profitability.
-
-Formula
-
-```
-ROI
-
-=
-
-Revenue
-
--
-
-(Fuel
-
-+
-
-Maintenance
-
-+
-
-Expenses)
-
------------------------
-
-Acquisition Cost
-```
-
----
-
-# Financial Summary
-
-Provides
-
-```
-Total Fuel Cost
-
-Total Maintenance Cost
-
-Total Expenses
-
-Total Revenue
-
-Total Profit
-
-Vehicle ROI
-```
-
----
-
-# Folder Structure
-
-```
-src/
-
-finance/
-
 ├── fuel/
+│   ├── fuel.routes.js           → /api/fuel
 │   ├── fuel.controller.js
-│   ├── fuel.service.js
-│   ├── fuel.repository.js
-│   ├── fuel.validator.js
-│   ├── fuel.routes.js
-│   └── fuel.model.js
+│   ├── fuel.service.js          → auto-computes total_cost on create/update
+│   ├── fuel.repository.js       → extends BaseRepository (18 lines)
+│   └── fuel.validator.js
 │
 ├── expenses/
+│   ├── expense.routes.js        → /api/expenses
+│   ├── expense.controller.js
+│   ├── expense.service.js
+│   ├── expense.repository.js    → extends BaseRepository (18 lines)
+│   └── expense.validator.js
 │
 ├── revenue/
+│   ├── revenue.routes.js        → /api/revenues
+│   ├── revenue.controller.js
+│   ├── revenue.service.js       → validates trip is Completed before recording revenue
+│   ├── revenue.repository.js    → extends BaseRepository (18 lines)
+│   └── revenue.validator.js
 │
-├── calculator/
-│   ├── cost.engine.js
-│   ├── roi.engine.js
-│   └── efficiency.engine.js
-│
-└── reports/
+└── calculator/
+    ├── finance.routes.js        → /api/finance/*
+    ├── finance.controller.js
+    ├── finance.service.js       → orchestrates the 3 engines
+    ├── cost.engine.js           → fuel + maintenance + expenses per vehicle
+    ├── roi.engine.js            → (Revenue - Cost) / acquisition_cost × 100
+    └── efficiency.engine.js     → total_distance / total_fuel_consumed
 ```
 
 ---
 
-# API Endpoints
+## Database Tables
 
-Fuel
-
-```
-GET /fuel
-
-GET /fuel/:id
-
-POST /fuel
-
-PUT /fuel/:id
-
-DELETE /fuel/:id
-```
-
-Expenses
-
-```
-GET /expenses
-
-POST /expenses
-
-PUT /expenses/:id
-
-DELETE /expenses/:id
+### `fuel_logs`
+```sql
+id,
+vehicle_id → vehicles,
+trip_id → trips,
+driver_id → drivers,
+fuel_station, quantity, price_per_liter,
+total_cost [auto-computed = quantity × price_per_liter],
+odometer_reading, fuel_date, remarks,
+created_by → users,
+created_at, updated_at, is_deleted
 ```
 
-Revenue
-
+### `expenses`
+```sql
+id,
+vehicle_id → vehicles,
+trip_id → trips,
+expense_type,    -- e.g., 'Toll', 'Parking', 'Fine', 'Repair'
+amount, expense_date, description,
+created_by → users,
+created_at, updated_at, is_deleted
 ```
-GET /revenue
 
-POST /revenue
-
-PUT /revenue/:id
-```
-
-Financial Summary
-
-```
-GET /finance/summary
-
-GET /finance/vehicle/:id
-
-GET /finance/trip/:id
+### `revenues`
+```sql
+id,
+trip_id → trips,         -- MUST be a Completed trip
+vehicle_id → vehicles,
+customer_name, amount,
+payment_status ['Pending'|'Partial'|'Paid'],
+invoice_number, received_date,
+created_by → users,
+created_at, updated_at, is_deleted
 ```
 
 ---
 
-# Database Tables
+## Financial Engines
 
-```
-fuel_logs
+### Cost Engine (`cost.engine.js`)
 
-expenses
+Aggregates all costs for a vehicle:
+```sql
+-- Fuel cost
+SELECT COALESCE(SUM(total_cost), 0) FROM fuel_logs WHERE vehicle_id = $1
 
-revenues
-```
+-- Maintenance cost
+SELECT COALESCE(SUM(actual_cost), 0) FROM maintenance_records
+  WHERE vehicle_id = $1 AND status = 'Completed'
 
-Relationships
-
-```
-Vehicle
-
-↓
-
-Fuel Logs
-
-↓
-
-Expenses
-
-↓
-
-Revenue
+-- Other expenses
+SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE vehicle_id = $1
 ```
 
----
-
-# Request Flow
-
-```
-Financial Analyst
-
-↓
-
-Finance Controller
-
-↓
-
-Finance Service
-
-↓
-
-Cost Engine
-
-↓
-
-Repository
-
-↓
-
-Database
+Returns:
+```json
+{
+  "fuelCost": 3200,
+  "maintenanceCost": 1500,
+  "otherExpenses": 400,
+  "totalCost": 5100
+}
 ```
 
 ---
 
-# Interaction With Other Layers
+### ROI Engine (`roi.engine.js`)
 
-Uses
+```javascript
+// roi.engine.js
 
-```
-Layer 0
-
-Authentication
-
-Validation
-
-RBAC
+const acquisitionCost = vehicle.acquisition_cost ?? 0;
+const revenue = SUM(revenues.amount WHERE vehicle_id = $1)
+const costs = await costEngine.calculate(vehicleId)
+const netProfit = revenue - costs.totalCost
+const roiPercentage = acquisitionCost > 0 ? (netProfit / acquisitionCost) * 100 : 0
 ```
 
-Uses
-
+**Formula:**
 ```
-Layer 1
-
-Vehicle
-
-Driver
-```
-
-Uses
-
-```
-Layer 3
-
-Trip Information
-```
-
-Uses
-
-```
-Layer 4
-
-Maintenance Cost
-```
-
-Provides
-
-```
-Layer 6
-
-Financial KPIs
-
-Cost Statistics
-
-ROI
-
-Fuel Efficiency
+ROI = (Revenue - (Fuel + Maintenance + Expenses)) / Acquisition Cost × 100
 ```
 
 ---
 
-# Business Rules
+### Efficiency Engine (`efficiency.engine.js`)
 
-## Rule 1
+```javascript
+// efficiency.engine.js
 
-Fuel Quantity
+// Total distance = sum of actual_distance from Completed trips for this vehicle
+const totalDistance = SUM(actual_distance FROM trips WHERE vehicle_id AND status='Completed')
 
-```
-Must Be Positive
-```
+// Total fuel = sum of quantity from fuel_logs for this vehicle
+const totalFuel = SUM(quantity FROM fuel_logs WHERE vehicle_id)
 
----
-
-## Rule 2
-
-Expense Amount
-
-```
-Cannot Be Negative
+const efficiency = totalFuel > 0 ? totalDistance / totalFuel : 0
+// Unit: km/liter
 ```
 
 ---
 
-## Rule 3
+## Business Rules
 
-Revenue
+| Rule | Location |
+|---|---|
+| `total_cost` auto-computed on create | `fuel.service.js` — `quantity × price_per_liter` |
+| `total_cost` re-computed on update | `fuel.service.js` — uses existing values as fallback |
+| Revenue only allowed for **Completed** trips | `revenue.service.js` |
+| ROI uses `vehicle.acquisition_cost` (not a hardcoded default) | `roi.engine.js` |
 
-```
-Only Completed Trips
+---
+
+## API Endpoints
+
+### Fuel Logs
+| Method | Endpoint | Roles | Description |
+|---|---|---|---|
+| GET | `/api/fuel?vehicle_id=1&trip_id=2&driver_id=3` | All | Filtered list |
+| GET | `/api/fuel/:id` | All | Get log |
+| POST | `/api/fuel` | Admin, Fleet Manager, Dispatcher | Create → auto total_cost |
+| PUT | `/api/fuel/:id` | Admin, Fleet Manager, Dispatcher | Update → re-compute total_cost |
+| DELETE | `/api/fuel/:id` | Admin, Fleet Manager, Dispatcher | Soft-delete |
+
+### Expenses
+| Method | Endpoint | Roles | Description |
+|---|---|---|---|
+| GET | `/api/expenses?vehicle_id=1&expense_type=Toll` | All | Filtered list |
+| GET | `/api/expenses/:id` | All | Get expense |
+| POST | `/api/expenses` | Admin, Fleet Manager, Dispatcher | Create |
+| PUT | `/api/expenses/:id` | Admin, Fleet Manager, Dispatcher | Update |
+| DELETE | `/api/expenses/:id` | Admin, Fleet Manager, Dispatcher | Soft-delete |
+
+### Revenues
+| Method | Endpoint | Roles | Description |
+|---|---|---|---|
+| GET | `/api/revenues?payment_status=Pending&vehicle_id=1` | All | Filtered list |
+| GET | `/api/revenues/:id` | All | Get revenue |
+| POST | `/api/revenues` | Admin, Fleet Manager | Create (trip must be Completed) |
+| PUT | `/api/revenues/:id` | Admin, Fleet Manager | Update |
+| DELETE | `/api/revenues/:id` | Admin, Fleet Manager | Soft-delete |
+
+### Financial Calculators
+| Method | Endpoint | Roles | Description |
+|---|---|---|---|
+| GET | `/api/finance/summary` | Admin, Fleet Manager | Global financial summary |
+| GET | `/api/finance/vehicle/:id` | Admin, Fleet Manager | Per-vehicle: costs, ROI, efficiency |
+| GET | `/api/finance/trip/:id` | Admin, Fleet Manager | Per-trip: revenue vs costs |
+
+**Sample `/api/finance/vehicle/:id` response:**
+```json
+{
+  "vehicleId": 3,
+  "financials": {
+    "revenue": 12000,
+    "costs": { "fuelCost": 3200, "maintenanceCost": 1500, "expenses": 400, "totalCost": 5100 },
+    "netProfit": 6900,
+    "acquisitionCost": 50000,
+    "roiPercentage": 13.8
+  },
+  "performance": {
+    "totalDistance": 4800,
+    "totalFuel": 360,
+    "efficiency": 13.33
+  }
+}
 ```
 
 ---
 
-## Rule 4
+## ✅ Completion Checklist
 
-Fuel Efficiency
-
-```
-Distance > 0
-
-Fuel > 0
-```
-
----
-
-## Rule 5
-
-Vehicle ROI
-
-Requires
-
-```
-Revenue
-
-Fuel Cost
-
-Maintenance Cost
-
-Acquisition Cost
-```
-
----
-
-# What This Layer Cannot Do
-
-❌ Dispatch Trip
-
-❌ Assign Driver
-
-❌ Change Vehicle Status
-
-❌ Start Maintenance
-
-❌ Generate Dashboard Charts
-
-Those responsibilities belong to other layers.
-
----
-
-# Design Principles
-
-- Financial Data Integrity
-- Immutable Transaction Records
-- Automatic Cost Calculation
-- Reusable Calculation Engine
-- Audit Friendly
-- Readable Financial History
-
----
-
-# Deliverables
-
-Layer 5 is complete when
-
-- Fuel Log CRUD implemented
-- Expense CRUD implemented
-- Revenue CRUD implemented
-- Cost Engine implemented
-- Fuel Efficiency calculation implemented
-- ROI Engine implemented
-- Financial Summary APIs implemented
-- Financial validation implemented
+- [x] Fuel log CRUD with auto `total_cost` computation
+- [x] Expense CRUD
+- [x] Revenue CRUD with Completed-trip validation
+- [x] Cost Engine (fuel + maintenance + expenses per vehicle)
+- [x] ROI Engine using correct `acquisition_cost` field
+- [x] Fuel Efficiency Engine (km/liter)
+- [x] Per-vehicle finance summary API
+- [x] Per-trip finance summary API
+- [x] Global finance summary API
+- [x] Filtering by vehicle_id, trip_id, driver_id, expense_type, payment_status

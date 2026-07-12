@@ -1,522 +1,209 @@
-> ⚠️ **Note:** Do not implement frontend for this layer.
+> ⚠️ **Note:** No frontend. API-only backend platform.
 
-# TransitOps Architecture
+# TransitOps — Layer 0: Foundation Layer
 
-# Layer 0 — Foundation Layer
+**Status: ✅ COMPLETE**
 
 ## Purpose
 
-The Foundation Layer provides the core infrastructure required by every other layer in the system.
+Layer 0 is the bedrock of the entire platform. It provides authentication, authorization, validation, error handling, logging, and the shared utility patterns used by every module in Layers 1–6.
 
-This layer **does not contain any transport business logic** (Vehicles, Trips, Maintenance, Fuel, etc.).
-
-Instead, it provides common services such as authentication, authorization, configuration, logging, validation, database connectivity, and shared utilities.
-
-Every higher layer depends on Layer 0.
+**This layer has zero business logic.** No vehicles, no trips, no fuel — only infrastructure.
 
 ---
 
-# Responsibilities
+## What Was Built
 
-- Initialize application
-- Load configuration
-- Connect PostgreSQL
-- Configure Express
-- Register middleware
-- Authentication
-- Authorization (RBAC)
-- Request validation
-- Error handling
-- Logging
-- Security
-- Shared utilities
-
----
-
-# High Level Architecture
-
-```
-                Layer 1+
-                    │
-                    ▼
-        ┌─────────────────────┐
-        │   Foundation Layer  │
-        └─────────────────────┘
-                    │
-                    ▼
-            PostgreSQL Database
-```
-
-Every request enters the Foundation Layer before reaching business modules.
-
----
-
-# Modules
-
-```
-Foundation
-│
-├── Configuration
-├── Database
-├── Authentication
-├── Authorization
-├── Middleware
-├── Logger
-├── Validation
-├── Error Handler
-├── Shared Utilities
-└── Constants
-```
-
----
-
-# Folder Structure
+### Actual Folder Structure
 
 ```
 src/
-
-├── config/
-│   ├── env.js
-│   ├── database.js
-│   └── app.js
+├── app.js                        ← Express app entry point, registers all routes
 │
-├── middleware/
-│   ├── auth.middleware.js
-│   ├── role.middleware.js
-│   ├── validate.middleware.js
-│   ├── error.middleware.js
-│   └── logger.middleware.js
+├── config/
+│   ├── env.js                    ← Loads .env variables (PORT, DATABASE_URL, JWT_SECRET, NODE_ENV)
+│   └── database.js               ← pg Pool connection — shared by all repositories
 │
 ├── auth/
-│   ├── auth.controller.js
-│   ├── auth.service.js
-│   ├── auth.repository.js
-│   ├── auth.routes.js
-│   └── jwt.js
+│   ├── auth.controller.js        ← Login / Register / Me handlers
+│   ├── auth.service.js           ← Password hashing (bcrypt), JWT generation/verification
+│   ├── auth.repository.js        ← Queries the `users` table
+│   └── auth.routes.js            ← POST /api/auth/login, /register, GET /me
 │
-├── common/
-│   ├── constants.js
-│   ├── enums.js
-│   ├── response.js
-│   ├── exceptions.js
-│   ├── logger.js
-│   ├── helpers.js
-│   └── validators.js
+├── middleware/
+│   ├── auth.middleware.js        ← Verifies JWT Bearer token, attaches req.user
+│   ├── role.middleware.js        ← RBAC role guard (variadic roles: roleMiddleware(ROLES.ADMIN, ...))
+│   ├── validate.middleware.js    ← Zod schema validator (validates body + query + params)
+│   ├── error.middleware.js       ← Global error handler — standardizes all error responses
+│   └── logger.middleware.js      ← Logs method, URL, status, response time on every request
 │
-└── app.js
+└── common/
+    ├── base.repository.js        ← BaseRepository class — generic findById/findAll/insert/update/softDelete
+    ├── catch-async.js            ← Shared (fn) => (req, res, next) wrapper for all controllers
+    ├── constants.js              ← ROLES, VEHICLE_STATUS, DRIVER_STATUS, TRIP_STATUS enums
+    ├── exceptions.js             ← AppError, NotFoundError, ValidationError (extend Error)
+    ├── response.js               ← sendSuccess() and sendPaginatedSuccess() helpers
+    └── schemas.js                ← Shared Zod schemas: idParam, pagination
 ```
 
 ---
 
-# Components
-
-## 1. Configuration
-
-Responsible for
-
-- Environment variables
-- Database credentials
-- JWT Secret
-- SMTP Configuration
-- Server Port
-- Application Constants
-
-Example
+## Authentication Flow
 
 ```
-PORT
-
-DATABASE_URL
-
-JWT_SECRET
-
-NODE_ENV
-
-SMTP_HOST
+POST /api/auth/login
+        ↓
+auth.controller → auth.service
+        ↓
+bcrypt.compare(password, hash)
+        ↓
+jwt.sign({ id, email, role })
+        ↓
+Returns: { token, user }
 ```
 
----
-
-## 2. Database
-
-Responsibilities
-
-- PostgreSQL Connection
-- Connection Pool
-- Transactions
-- Health Check
-
-No business logic.
-
-Only database initialization.
-
----
-
-## 3. Authentication
-
-Purpose
-
-Verify user identity.
-
-Responsibilities
-
-- Login
-- Logout
-- Password Hashing
-- JWT Generation
-- JWT Verification
-- Token Refresh (optional)
-
-Output
-
-```
-Authenticated User
-```
-
----
-
-## 4. Authorization (RBAC)
-
-Purpose
-
-Determine what a user can access.
-
-Roles
-
-```
-Admin
-
-Fleet Manager
-
-Dispatcher
-
-Safety Officer
-
-Financial Analyst
-```
-
-Permissions example
-
-```
-Fleet Manager
-
-✓ Vehicles
-
-✓ Maintenance
-
-✗ Users
-```
-
-```
-Dispatcher
-
-✓ Trips
-
-✓ Drivers
-
-✗ Expenses
-```
-
----
-
-## 5. Middleware
-
-Global middleware.
-
-Includes
-
-```
-Authentication
-
-Authorization
-
-Validation
-
-Logger
-
-Error Handler
-
-CORS
-
-Helmet
-
-Compression
-```
-
-Every request flows through middleware.
-
+**On every subsequent request:**
 ```
 Request
-
-↓
-
-Authentication
-
-↓
-
-Authorization
-
-↓
-
-Validation
-
-↓
-
-Controller
+    ↓
+auth.middleware (reads Authorization: Bearer <token>)
+    ↓
+jwt.verify(token, JWT_SECRET)
+    ↓
+Attaches req.user = { id, email, role }
+    ↓
+role.middleware (checks req.user.role against allowed roles)
 ```
 
 ---
 
-## 6. Logger
+## RBAC Roles
 
-Purpose
-
-Capture application activity.
-
-Log Levels
-
-```
-INFO
-
-WARNING
-
-ERROR
-
-DEBUG
-```
-
-Example
-
-```
-User Login
-
-Trip Created
-
-Maintenance Completed
-
-Database Error
-```
+| Role | Constant |
+|---|---|
+| Admin | `ROLES.ADMIN` |
+| Fleet Manager | `ROLES.FLEET_MANAGER` |
+| Dispatcher | `ROLES.DISPATCHER` |
+| Safety Officer | `ROLES.SAFETY_OFFICER` |
+| Financial Analyst | `ROLES.FINANCIAL_ANALYST` |
 
 ---
 
-## 7. Validation
+## Shared Utilities
 
-Centralized validation.
+### `BaseRepository` — used by ALL repositories
 
-Examples
-
-```
-Email Format
-
-Phone Number
-
-UUID
-
-Date
-
-Required Fields
-
-Numeric Range
+```javascript
+class BaseRepository {
+  constructor(table) { this.table = table; }
+  findById(id)          // SELECT WHERE id AND is_deleted = false
+  findAll(limit, offset, conditions, params)  // paginated SELECT
+  findOneWhere(cond, params)   // single-row conditional SELECT
+  insert(columns, values)     // INSERT ... RETURNING *
+  update(id, data)             // dynamic SET, skips undefined fields
+  softDelete(id)               // SET is_deleted = true
+}
 ```
 
-Business validation belongs to higher layers.
+### `catchAsync` — used by ALL controllers
 
-Layer 0 only validates request format.
+```javascript
+module.exports = (fn) => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
+```
 
----
-
-## 8. Error Handling
-
-Global exception handler.
-
-Standard Response
+### Error Response Format
 
 ```json
 {
-    "success": false,
-    "message": "...",
-    "errorCode": "...",
-    "timestamp": "...",
-    "path": "..."
+  "success": false,
+  "message": "Descriptive error message",
+  "statusCode": 400
+}
+```
+
+### Success Response Format
+
+```json
+{
+  "success": true,
+  "message": "Resource created",
+  "data": { ... }
+}
+```
+
+### Paginated Response Format
+
+```json
+{
+  "success": true,
+  "data": [...],
+  "pagination": { "total": 45, "page": 2, "limit": 10, "totalPages": 5 }
 }
 ```
 
 ---
 
-## 9. Shared Utilities
+## Security
 
-Contains reusable functions.
-
-Examples
-
-```
-Date Formatter
-
-Response Builder
-
-Pagination
-
-UUID Generator
-
-File Helper
-
-CSV Helper
-```
-
-No business-specific utilities.
+| Feature | Implementation |
+|---|---|
+| Helmet | `helmet()` — sets 15+ security headers |
+| CORS | `cors()` — allows cross-origin requests |
+| Compression | `compression()` — gzip all responses |
+| Rate Limiting | `express-rate-limit` — 10 requests/15min on `/api/auth` |
+| Password Hashing | `bcrypt` (salt rounds = 10) |
+| JWT | RS256 secret, stored in env variable |
 
 ---
 
-# Request Flow
+## Database
 
-```
-Client Request
+- **Driver:** `pg` (raw queries, no ORM)
+- **Connection:** `Pool` singleton exported from `config/database.js`
+- **Tables (Layer 0):** `users (id, email, password_hash, role, full_name, created_at)`
 
-↓
+---
 
-Express
+## API Endpoints
 
-↓
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| POST | `/api/auth/login` | ❌ | Login → returns JWT token |
+| POST | `/api/auth/register` | ❌ | Register new user |
+| GET | `/api/auth/me` | ✅ | Get current user info |
+| GET | `/health` | ❌ | Server + DB health check |
 
-Logger Middleware
+---
 
-↓
+## Dependencies
 
-Authentication Middleware
-
-↓
-
-Authorization Middleware
-
-↓
-
-Validation Middleware
-
-↓
-
-Controller
-
-↓
-
-Business Layer
-
-↓
-
-Repository
-
-↓
-
-PostgreSQL
-
-↓
-
-Response Builder
-
-↓
-
-Client
+```json
+{
+  "express": "^5.2.1",
+  "pg": "^8.22.0",
+  "jsonwebtoken": "^9.0.3",
+  "bcrypt": "^6.0.0",
+  "zod": "^4.4.3",
+  "helmet": "^8.3.0",
+  "cors": "^2.8.6",
+  "compression": "^1.8.1",
+  "express-rate-limit": "^8.5.2",
+  "dotenv": "^17.4.2"
+}
 ```
 
 ---
 
-# Database Tables (Layer 0)
+## ✅ Completion Checklist
 
-Only security-related tables belong here.
-
-```
-users
-
-roles
-
-user_roles
-```
-
-Transport-related tables belong to higher layers.
-
----
-
-# Exposed Services
-
-Layer 0 provides the following reusable services.
-
-```
-Authenticate User
-
-Authorize Role
-
-Validate Request
-
-Generate JWT
-
-Verify JWT
-
-Log Event
-
-Create Response
-
-Database Connection
-```
-
----
-
-# Dependencies
-
-Layer 0 depends on
-
-- Node.js
-- Express.js
-- PostgreSQL
-- JWT
-- bcrypt
-- dotenv
-
----
-
-# Layers Using Layer 0
-
-```
-Layer 1
-
-Layer 2
-
-Layer 3
-
-Layer 4
-
-Layer 5
-
-Layer 6
-```
-
-Every layer depends on Layer 0.
-
-Layer 0 depends on none.
-
----
-
-# Design Principles
-
-- Single Responsibility Principle
-- Dependency Injection where practical
-- Stateless Authentication
-- Centralized Error Handling
-- Modular Structure
-- Reusable Components
-- Security First
-- No Business Logic
-- Common Services Only
-
----
-
-# Deliverables
-
-Layer 0 is considered complete when:
-
-- PostgreSQL connection established
-- JWT authentication working
-- RBAC middleware working
-- Logger implemented
-- Global error handler implemented
-- Validation middleware implemented
-- Environment configuration loaded
-- Express server running successfully
+- [x] PostgreSQL connection (pg Pool) established
+- [x] JWT authentication working (login + verify)
+- [x] RBAC middleware working (5 roles)
+- [x] Rate limiting on auth routes
+- [x] Global error handler (all errors → standard JSON)
+- [x] Zod validation middleware
+- [x] Request logger middleware
+- [x] BaseRepository shared utility
+- [x] Shared catchAsync, response helpers, schemas
+- [x] Express server running successfully

@@ -1,551 +1,146 @@
-> ⚠️ **Note:** Do not implement frontend for this layer.
+> ⚠️ **Note:** No frontend. API-only backend platform.
 
-# TransitOps Architecture
+# TransitOps — Layer 2: Fleet Availability Layer
 
-# Layer 2 — Fleet Availability Layer
+**Status: ✅ COMPLETE**
 
 ## Purpose
 
-The Fleet Availability Layer is responsible for managing the real-time operational state of fleet resources.
+Layer 2 manages real-time operational state of fleet resources. It provides the **resource locking mechanism** that prevents double-booking of vehicles and drivers. Every dispatch workflow passes through this layer.
 
-Unlike Layer 1, which stores master records, this layer determines whether a vehicle or driver is currently available for business operations.
-
-Every workflow (Trip, Maintenance, Finance, Analytics) depends on this layer to know the current availability of resources.
+This layer modifies status fields on the `vehicles` and `drivers` tables (owned by Layer 1). It does not own any tables itself.
 
 ---
 
-# Position in Architecture
+## Folder Structure
 
 ```
-Presentation Layer
-        │
-API Layer
-        │
-Business Layer
-        │
-────────────────────────────
-Layer 3 - Operations
-────────────────────────────
-        │
-────────────────────────────
-Layer 2 - Fleet Availability
-────────────────────────────
-        │
-────────────────────────────
-Layer 1 - Master Data
-────────────────────────────
-        │
-Layer 0 - Foundation
-```
-
-Layer 2 sits between Master Data and all business workflows.
-
----
-
-# Responsibilities
-
-- Track Vehicle Availability
-- Track Driver Availability
-- Maintain Current Operational Status
-- Prevent Resource Conflicts
-- Allocate Resources
-- Release Resources
-- Availability Validation
-- Fleet State Queries
-
-No trip creation.
-
-No maintenance records.
-
-No fuel logging.
-
-Only resource state.
-
----
-
-# Core Modules
-
-```
-Fleet Availability
-
-│
-├── Vehicle State
-├── Driver State
-├── Resource Allocation
-├── Availability Service
-└── Fleet Status
+src/modules/fleet/availability/
+├── availability.routes.js       → All /api/fleet/* endpoints
+├── availability.controller.js   → Request handlers (uses shared catchAsync)
+├── availability.service.js      → Core lock/unlock logic with SELECT FOR UPDATE
+└── availability.validator.js    → Zod schemas for param/body validation
 ```
 
 ---
 
-# Vehicle State
+## The Core Problem This Layer Solves
 
-Purpose
+Without transactional locking, two dispatchers could simultaneously assign the same vehicle to two different trips. Layer 2 solves this using PostgreSQL row-level locking:
 
-Maintain the current operational state of every vehicle.
+```sql
+BEGIN;
+SELECT status FROM vehicles WHERE id = $1 FOR UPDATE;
+-- Only proceeds if status = 'Available'
+UPDATE vehicles SET status = 'On Trip' WHERE id = $1;
+COMMIT;
+```
+
+If the vehicle is already locked (another transaction holds the lock), this query blocks until the first transaction completes.
 
 ---
 
-## Vehicle Status
+## Service Functions (called by Layer 3)
 
-```
-Available
+```javascript
+// availability.service.js
 
-On Trip
+reserveVehicle(vehicleId)     // SELECT FOR UPDATE → confirms Available → COMMIT
+releaseVehicle(vehicleId)     // UPDATE status back to 'Available'
+reserveDriver(driverId)       // SELECT FOR UPDATE → confirms Available → COMMIT
+releaseDriver(driverId)       // UPDATE status back to 'Available'
 
-In Shop
+changeVehicleStatus(id, status)   // Direct status update (used by maintenance + trip)
+changeDriverStatus(id, status)    // Direct status update
 
-Retired
-```
-
-Only one active status is allowed.
-
----
-
-## Allowed Operations
-
-```
-Reserve Vehicle
-
-Release Vehicle
-
-Mark In Shop
-
-Retire Vehicle
-
-Restore Vehicle
+getAvailableVehicles(filters)     // Returns vehicles WHERE status = 'Available'
+getAvailableDrivers(filters)      // Returns drivers WHERE status = 'Available'
+getFleetStatistics()              // Count summary by status
 ```
 
 ---
 
-## Validation Rules
+## Rollback on Failure
 
-Vehicle cannot
+If vehicle reservation succeeds but driver reservation fails, the vehicle is automatically released:
 
-- Be reserved twice
-- Be dispatched if retired
-- Be dispatched if in shop
-- Be dispatched if already on trip
+```javascript
+// In trip.service.js dispatch workflow:
+try {
+  await availabilityService.reserveVehicle(vehicle_id);
+} catch (err) {
+  throw new AppError(`Vehicle reservation failed: ${err.message}`, 400);
+}
 
----
-
-# Driver State
-
-Purpose
-
-Maintain current driver availability.
-
----
-
-## Driver Status
-
-```
-Available
-
-On Trip
-
-Off Duty
-
-Suspended
+try {
+  await availabilityService.reserveDriver(driver_id);
+} catch (err) {
+  await availabilityService.releaseVehicle(vehicle_id); // ← rollback
+  throw new AppError(`Driver reservation failed: ${err.message}`, 400);
+}
 ```
 
 ---
 
-## Allowed Operations
+## Status Transition Map
 
 ```
-Reserve Driver
+Vehicle:
+  Available ──reserve()──→ (locked) ──changeVehicleStatus('On Trip')──→ On Trip
+  On Trip ──release()──────────────────────────────────────────────────→ Available
+  Available ──changeVehicleStatus('In Shop')──────────────────────────→ In Shop
+  In Shop ──changeVehicleStatus('Available')──────────────────────────→ Available
+  Any ──changeVehicleStatus('Retired')────────────────────────────────→ Retired
 
-Release Driver
-
-Suspend Driver
-
-Resume Driver
-
-Mark Off Duty
-```
-
----
-
-## Validation Rules
-
-Driver cannot
-
-- Drive two trips simultaneously
-- Drive with expired license
-- Drive while suspended
-- Drive while off duty
-
----
-
-# Resource Allocation
-
-Purpose
-
-Temporarily reserve resources before a workflow begins.
-
-Example
-
-```
-Vehicle
-
-↓
-
-Reserve
-
-↓
-
-Locked
-
-↓
-
-Trip Starts
-
-↓
-
-On Trip
-```
-
-If workflow fails
-
-```
-Reserve
-
-↓
-
-Rollback
-
-↓
-
-Available
-```
-
-This prevents race conditions.
-
----
-
-# Availability Service
-
-Provides reusable APIs for higher layers.
-
-Example
-
-```
-isVehicleAvailable()
-
-isDriverAvailable()
-
-reserveVehicle()
-
-reserveDriver()
-
-releaseVehicle()
-
-releaseDriver()
-```
-
-No workflow logic exists here.
-
----
-
-# Fleet Status Service
-
-Provides fleet statistics.
-
-Examples
-
-```
-Available Vehicles
-
-Vehicles On Trip
-
-Vehicles In Shop
-
-Available Drivers
-
-Drivers On Trip
-
-Suspended Drivers
-```
-
-Dashboard uses these services.
-
----
-
-# Folder Structure
-
-```
-src/
-
-fleet/
-
-├── availability/
-│   ├── availability.controller.js
-│   ├── availability.service.js
-│   ├── availability.repository.js
-│   ├── availability.validator.js
-│   └── availability.routes.js
-│
-├── vehicle-state/
-│
-├── driver-state/
-│
-└── allocation/
+Driver:
+  Available ──reserve()──→ (locked) ──changeDriverStatus('On Trip')──→ On Trip
+  On Trip ──release()─────────────────────────────────────────────────→ Available
+  Any ──changeDriverStatus('Suspended'/'Off Duty')─────────────────────→ Suspended/Off Duty
 ```
 
 ---
 
-# API Endpoints
+## API Endpoints
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/api/fleet/status` | ✅ | Fleet statistics (counts by status) |
+| GET | `/api/fleet/available-vehicles?region_id=1` | ✅ | Available vehicles list |
+| GET | `/api/fleet/available-drivers?license_category_id=1` | ✅ | Available drivers list |
+| POST | `/api/fleet/reserve-vehicle/:id` | ✅ | Lock vehicle with FOR UPDATE |
+| POST | `/api/fleet/release-vehicle/:id` | ✅ | Release vehicle lock |
+| POST | `/api/fleet/reserve-driver/:id` | ✅ | Lock driver with FOR UPDATE |
+| POST | `/api/fleet/release-driver/:id` | ✅ | Release driver lock |
+| PUT | `/api/fleet/vehicle-status/:id` | ✅ | Direct status change |
+| PUT | `/api/fleet/driver-status/:id` | ✅ | Direct status change |
+
+---
+
+## Database
+
+No new tables. Layer 2 writes to Layer 1 tables:
 
 ```
-GET /fleet/status
-
-GET /fleet/available-vehicles
-
-GET /fleet/available-drivers
-
-POST /fleet/reserve-vehicle
-
-POST /fleet/release-vehicle
-
-POST /fleet/reserve-driver
-
-POST /fleet/release-driver
+vehicles.status   ← Updated by reserveVehicle, releaseVehicle, changeVehicleStatus
+drivers.status    ← Updated by reserveDriver, releaseDriver, changeDriverStatus
 ```
 
 ---
 
-# Database
+## Dependencies
 
-No new master tables.
-
-Layer 2 updates operational fields inside Layer 1 entities.
-
-Example
-
-Vehicle
-
-```
-vehicle_id
-
-status
-
-allocated_at
-
-updated_at
-```
-
-Driver
-
-```
-driver_id
-
-status
-
-updated_at
-```
+- **Depends on:** Layer 0 (auth, JWT, pg pool), Layer 1 (vehicles + drivers tables)
+- **Used by:** Layer 3 (Trips — dispatch, complete, cancel), Layer 4 (Maintenance — In Shop transitions)
 
 ---
 
-# State Transition
-
-Vehicle
-
-```
-Available
-
-↓
-
-Reserved
-
-↓
-
-On Trip
-
-↓
-
-Available
-```
-
-Maintenance
-
-```
-Available
-
-↓
-
-In Shop
-
-↓
-
-Available
-```
-
-Retirement
-
-```
-Available
-
-↓
-
-Retired
-```
-
----
-
-# Validation Flow
-
-Example
-
-Trip requests vehicle.
-
-```
-Trip Workflow
-
-↓
-
-Availability Service
-
-↓
-
-Vehicle Status
-
-↓
-
-Available ?
-
-↓
-
-Yes
-
-↓
-
-Reserve Vehicle
-```
-
-If status
-
-```
-On Trip
-
-In Shop
-
-Retired
-```
-
-Request fails.
-
----
-
-# Data Flow
-
-```
-Trip Workflow
-
-↓
-
-Availability Service
-
-↓
-
-Vehicle Repository
-
-↓
-
-Driver Repository
-
-↓
-
-Update Status
-
-↓
-
-Return Result
-```
-
----
-
-# Exposed Services
-
-```
-getAvailableVehicles()
-
-getAvailableDrivers()
-
-reserveVehicle()
-
-releaseVehicle()
-
-reserveDriver()
-
-releaseDriver()
-
-changeVehicleStatus()
-
-changeDriverStatus()
-
-getFleetStatistics()
-```
-
----
-
-# Dependencies
-
-Depends On
-
-- Layer 0 (Authentication, Validation)
-- Layer 1 (Vehicle, Driver Master Data)
-
-Used By
-
-- Layer 3 (Trip Operations)
-- Layer 4 (Maintenance)
-- Layer 5 (Finance)
-- Layer 6 (Analytics)
-
----
-
-# What This Layer Cannot Do
-
-❌ Create Trip
-
-❌ Complete Trip
-
-❌ Create Maintenance Record
-
-❌ Add Fuel Log
-
-❌ Add Expense
-
-❌ Calculate ROI
-
-❌ Dashboard Charts
-
-Those responsibilities belong to higher layers.
-
----
-
-# Design Principles
-
-- Single Responsibility
-- Resource Availability Only
-- Centralized State Management
-- Conflict Prevention
-- No Business Workflow
-- Transaction Safe
-- Reusable Services
-
----
-
-# Deliverables
-
-Layer 2 is complete when
-
-- Vehicle availability tracking implemented
-- Driver availability tracking implemented
-- Resource reservation implemented
-- Resource release implemented
-- Status transition service implemented
-- Fleet status APIs implemented
-- Availability validation implemented
-- Fleet statistics service implemented
+## ✅ Completion Checklist
+
+- [x] Vehicle availability tracking (status field)
+- [x] Driver availability tracking (status field)
+- [x] Resource reservation with `SELECT ... FOR UPDATE`
+- [x] Resource release (back to Available)
+- [x] Rollback on partial failure (vehicle released if driver fails)
+- [x] Direct status transition endpoints
+- [x] Fleet statistics API
+- [x] Available vehicles/drivers query with filters

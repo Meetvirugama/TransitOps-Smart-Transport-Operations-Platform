@@ -1,628 +1,183 @@
-> ⚠️ **Note:** Do not implement frontend for this layer.
+> ⚠️ **Note:** No frontend. API-only backend platform.
 
-# TransitOps Architecture
+# TransitOps — Layer 4: Maintenance Layer
 
-# Layer 4 — Maintenance Management Layer
+**Status: ✅ COMPLETE**
 
 ## Purpose
 
-The Maintenance Management Layer is responsible for managing the complete lifecycle of vehicle maintenance.
-
-Its objective is to ensure that vehicles remain operational, safe, and compliant by recording maintenance activities and controlling workshop operations.
-
-This layer automatically affects vehicle availability through Layer 2.
-
-It **does not** manage trips, fuel logs, expenses, or analytics.
+Layer 4 manages the vehicle maintenance lifecycle — from scheduling through completion. Its key integration point is **automatic vehicle status management**: when maintenance is scheduled, the vehicle moves to `In Shop`; when completed or cancelled, it returns to `Available`.
 
 ---
 
-# Position in Architecture
+## Folder Structure
 
 ```
-Presentation Layer
-        │
-API Layer
-        │
-────────────────────────────
-Layer 4 - Maintenance
-────────────────────────────
-        │
-Layer 3 - Operations
-        │
-Layer 2 - Fleet Availability
-        │
-Layer 1 - Master Data
-        │
-Layer 0 - Foundation
-```
-
----
-
-# Responsibilities
-
-- Create Maintenance Record
-- Schedule Maintenance
-- Track Maintenance Progress
-- Close Maintenance
-- Update Vehicle Availability
-- Maintain Service History
-- Calculate Maintenance Cost
-- Track Workshop Status
-
----
-
-# Core Modules
-
-```
-Maintenance
-
+src/modules/maintenance/
 │
-├── Maintenance Records
-├── Maintenance Workflow
-├── Workshop Management
-├── Service History
-├── Maintenance Rules
-└── Cost Tracking
-```
-
----
-
-# Maintenance Record
-
-Purpose
-
-Maintain complete maintenance information for every vehicle.
-
----
-
-## Attributes
-
-```
-Maintenance ID
-
-Vehicle ID
-
-Maintenance Type
-
-Description
-
-Workshop Name
-
-Technician
-
-Start Date
-
-Expected Completion Date
-
-Completed Date
-
-Estimated Cost
-
-Actual Cost
-
-Status
-
-Remarks
-```
-
----
-
-# Maintenance Types
-
-```
-Oil Change
-
-Engine Service
-
-Brake Service
-
-Tyre Replacement
-
-Battery Replacement
-
-Insurance Inspection
-
-General Service
-
-Accidental Repair
-```
-
----
-
-# Maintenance Status
-
-```
-Scheduled
-
-In Progress
-
-Completed
-
-Cancelled
-```
-
----
-
-# Maintenance Workflow
-
-## Workflow 1 — Create Maintenance
-
-```
-Create Request
-
-↓
-
-Validate Vehicle
-
-↓
-
-Check Vehicle Exists
-
-↓
-
-Check Active Maintenance
-
-↓
-
-Create Maintenance Record
-
-↓
-
-Change Vehicle Status
-
-↓
-
-In Shop
-```
-
-Vehicle immediately becomes unavailable.
-
----
-
-## Workflow 2 — Start Maintenance
-
-```
-Scheduled
-
-↓
-
-Assign Workshop
-
-↓
-
-Assign Technician
-
-↓
-
-Start Work
-
-↓
-
-Status
-
-↓
-
-In Progress
-```
-
----
-
-## Workflow 3 — Complete Maintenance
-
-```
-Maintenance Completed
-
-↓
-
-Enter Final Cost
-
-↓
-
-Enter Completion Date
-
-↓
-
-Update Service History
-
-↓
-
-Vehicle Available
-
-↓
-
-Close Maintenance
-```
-
----
-
-## Workflow 4 — Cancel Maintenance
-
-```
-Cancel Request
-
-↓
-
-Maintenance Cancelled
-
-↓
-
-Vehicle Available
-```
-
----
-
-# Maintenance Rules
-
----
-
-## Rule 1
-
-One vehicle
-
-↓
-
-One active maintenance
-
-```
-Vehicle
-
-↓
-
-Only One Active Record
-```
-
----
-
-## Rule 2
-
-Vehicle under maintenance
-
-↓
-
-Cannot Dispatch
-
----
-
-## Rule 3
-
-Completed maintenance
-
-↓
-
-Vehicle becomes Available
-
-Unless
-
-```
-Vehicle
-
-↓
-
-Retired
-```
-
----
-
-## Rule 4
-
-Cancelled maintenance
-
-↓
-
-Restore Previous Status
-
----
-
-## Rule 5
-
-Maintenance cost
-
-```
->= 0
-```
-
----
-
-# Workshop Management
-
-Purpose
-
-Manage where maintenance is performed.
-
----
-
-## Workshop Attributes
-
-```
-Workshop ID
-
-Workshop Name
-
-Address
-
-Contact Number
-
-Manager
-
-Status
-```
-
----
-
-# Technician
-
-Optional module.
-
-Attributes
-
-```
-Technician ID
-
-Name
-
-Phone
-
-Specialization
-```
-
----
-
-# Service History
-
-Every completed maintenance generates a permanent service history.
-
-History contains
-
-```
-Vehicle
-
-↓
-
-Maintenance Type
-
-↓
-
-Date
-
-↓
-
-Cost
-
-↓
-
-Technician
-
-↓
-
-Workshop
-```
-
-History cannot be modified after completion.
-
----
-
-# Cost Tracking
-
-Every maintenance records
-
-```
-Estimated Cost
-
-Actual Cost
-
-Difference
-```
-
-Finance Layer will consume these values.
-
----
-
-# Folder Structure
-
-```
-src/
-
-maintenance/
-
-├── maintenance.controller.js
-├── maintenance.service.js
-├── maintenance.repository.js
-├── maintenance.validator.js
-├── maintenance.routes.js
-├── maintenance.model.js
+├── workshops/
+│   ├── workshop.routes.js       → CRUD /api/workshops
+│   ├── workshop.controller.js   → Request handlers (shared catchAsync)
+│   ├── workshop.service.js      → Duplicate name check, CRUD
+│   ├── workshop.repository.js   → extends BaseRepository (9 lines)
+│   └── workshop.validator.js    → Zod schemas
 │
-├── workflow/
-│   ├── createMaintenance.workflow.js
-│   ├── startMaintenance.workflow.js
-│   ├── completeMaintenance.workflow.js
-│   └── cancelMaintenance.workflow.js
-│
-├── workshop/
-│
-├── technician/
-│
-└── rules/
+└── records/
+    ├── maintenance.routes.js    → CRUD + workflow /api/maintenance
+    ├── maintenance.controller.js
+    ├── maintenance.service.js   → All workflow logic + vehicle status transitions
+    ├── maintenance.repository.js → extends BaseRepository, custom JOINs (48 lines)
+    └── maintenance.validator.js
 ```
 
 ---
 
-# API Endpoints
+## Database Tables
 
-```
-GET /maintenance
-
-GET /maintenance/:id
-
-POST /maintenance
-
-PUT /maintenance/:id
-
-DELETE /maintenance/:id
+### `workshops`
+```sql
+id, name, address, contact_number, manager,
+status ['Active'|'Inactive'],
+created_at, updated_at, is_deleted
 ```
 
-Workflow APIs
-
-```
-POST /maintenance/:id/start
-
-POST /maintenance/:id/complete
-
-POST /maintenance/:id/cancel
-```
-
----
-
-# Database Tables
-
-```
-maintenance
-
-maintenance_history
-
-workshops
-
-technicians
-```
-
-Relationships
-
-```
-Vehicle
-
-↓
-
-Maintenance
-
-↓
-
-Workshop
-
-↓
-
-Technician
+### `maintenance_records`
+```sql
+id,
+vehicle_id → vehicles,
+workshop_id → workshops,
+maintenance_type,          -- e.g., 'Oil Change', 'Tire Replacement', 'Engine Service'
+description,
+status ['Scheduled'|'In Progress'|'Completed'|'Cancelled'],
+estimated_cost,
+actual_cost,
+scheduled_date,
+started_at,
+completed_at,
+created_by → users,
+created_at, updated_at, is_deleted
 ```
 
 ---
 
-# Request Flow
+## Maintenance Lifecycle
 
 ```
-Fleet Manager
-
-↓
-
-Maintenance Controller
-
-↓
-
-Maintenance Service
-
-↓
-
-Maintenance Workflow
-
-↓
-
-Maintenance Rules
-
-↓
-
-Fleet Availability Layer
-
-↓
-
-Repository
-
-↓
-
-Database
+POST /api/maintenance
+    → Creates record with status 'Scheduled'
+    → Vehicle status automatically → 'In Shop'
+         ↓
+POST /api/maintenance/:id/start
+    → status → 'In Progress', records started_at
+         ↓
+POST /api/maintenance/:id/complete
+    → status → 'Completed', records completed_at, saves actual_cost
+    → Vehicle status automatically → 'Available'
+         ↓ (alternative)
+POST /api/maintenance/:id/cancel
+    → status → 'Cancelled'
+    → Vehicle status automatically → 'Available'
 ```
 
 ---
 
-# Interaction With Other Layers
+## Business Logic in `maintenance.service.js`
 
-Uses
+### Schedule Maintenance
+```javascript
+async scheduleMaintenance(data, userId) {
+  // 1. Check vehicle exists
+  const vehicle = await vehicleRepo.findById(data.vehicle_id);
+  if (!vehicle) throw new NotFoundError('Vehicle not found');
 
-```
-Layer 0
+  // 2. Check no active maintenance already exists
+  const active = await maintenanceRepo.findActiveByVehicleId(data.vehicle_id);
+  if (active) throw new AppError('Vehicle already has active maintenance', 400);
 
-Authentication
+  // 3. Create maintenance record
+  const record = await maintenanceRepo.create({ ...data, created_by: userId });
 
-Validation
+  // 4. Update vehicle status → In Shop
+  await vehicleRepo.update(data.vehicle_id, { status: 'In Shop' });
 
-RBAC
-```
-
-Uses
-
-```
-Layer 1
-
-Vehicle Master Data
-```
-
-Uses
-
-```
-Layer 2
-
-Vehicle Availability
-
-Status Update
+  return record;
+}
 ```
 
-Provides
-
-```
-Layer 5
-
-Maintenance Cost
-
-Layer 6
-
-Maintenance Statistics
+### Complete Maintenance
+```javascript
+async completeMaintenance(id, { actual_cost }) {
+  // 1. Verify record is In Progress
+  // 2. Update record → Completed + actual_cost + completed_at
+  // 3. Restore vehicle → Available
+  await vehicleRepo.update(record.vehicle_id, { status: 'Available' });
+}
 ```
 
 ---
 
-# What This Layer Cannot Do
+## Repository — Custom JOINs
 
-❌ Create Trips
+`maintenance.repository.js` extends `BaseRepository` and overrides `findById`/`findAll` to include vehicle registration number and workshop name:
 
-❌ Dispatch Trips
+```sql
+SELECT m.*, v.registration_number, w.name as workshop_name
+FROM maintenance_records m
+LEFT JOIN vehicles v ON m.vehicle_id = v.id
+LEFT JOIN workshops w ON m.workshop_id = w.id
+WHERE m.id = $1 AND m.is_deleted = false
+```
 
-❌ Record Fuel
-
-❌ Record Expenses
-
-❌ Generate Dashboard
-
-Those belong to other layers.
-
----
-
-# Design Principles
-
-- Vehicle Safety First
-- One Active Maintenance Per Vehicle
-- Immutable Service History
-- Automatic Availability Control
-- Centralized Workflow
-- Transaction Safe
-- Cost Traceability
+Also implements `findActiveByVehicleId`:
+```sql
+SELECT * FROM maintenance_records
+WHERE vehicle_id = $1
+  AND status IN ('Scheduled', 'In Progress')
+  AND is_deleted = false
+```
 
 ---
 
-# Deliverables
+## API Endpoints
 
-Layer 4 is complete when
+### Workshops
+| Method | Endpoint | Roles | Description |
+|---|---|---|---|
+| GET | `/api/workshops` | All | List workshops |
+| GET | `/api/workshops/:id` | All | Get workshop |
+| POST | `/api/workshops` | Admin, Fleet Manager | Create workshop |
+| PUT | `/api/workshops/:id` | Admin, Fleet Manager | Update |
+| DELETE | `/api/workshops/:id` | Admin, Fleet Manager | Soft-delete |
 
-- Maintenance CRUD implemented
-- Maintenance lifecycle implemented
-- Workshop management implemented
-- Service history implemented
-- Maintenance rule engine implemented
-- Vehicle availability integration completed
-- Cost tracking implemented
-- Status transitions implemented
+### Maintenance Records
+| Method | Endpoint | Roles | Description |
+|---|---|---|---|
+| GET | `/api/maintenance?status=In Progress&vehicle_id=1&workshop_id=1` | All | List (filterable) |
+| GET | `/api/maintenance/:id` | All | Get with vehicle + workshop JOIN |
+| POST | `/api/maintenance` | Admin, Fleet Manager | Schedule → vehicle to **In Shop** |
+| POST | `/api/maintenance/:id/start` | Admin, Fleet Manager | Start → In Progress |
+| POST | `/api/maintenance/:id/complete` | Admin, Fleet Manager | Complete → vehicle to **Available** |
+| POST | `/api/maintenance/:id/cancel` | Admin, Fleet Manager | Cancel → vehicle to **Available** |
+
+---
+
+## Integration with Other Layers
+
+- **Layer 1:** Reads `vehicles` (checks existence, updates status)
+- **Layer 2:** Calls `changeVehicleStatus()` to update vehicle status
+- **Layer 5:** Maintenance `actual_cost` is queried by the Cost Engine for total cost calculations
+- **Layer 6:** KPI engine sums maintenance costs from `maintenance_records`
+
+---
+
+## ✅ Completion Checklist
+
+- [x] Workshop CRUD (name, address, contact, manager, status)
+- [x] Maintenance record creation → vehicle auto In Shop
+- [x] Maintenance start workflow
+- [x] Maintenance completion → vehicle auto Available + actual_cost saved
+- [x] Maintenance cancellation → vehicle auto Available
+- [x] Guard: prevents scheduling when active maintenance exists
+- [x] Filtering by status, vehicle_id, workshop_id
+- [x] JOIN responses (vehicle registration + workshop name)
+- [x] Soft delete on both workshops and records

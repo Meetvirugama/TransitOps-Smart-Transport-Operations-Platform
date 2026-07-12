@@ -1,702 +1,208 @@
-> ⚠️ **Note:** Do not implement frontend for this layer.
+> ⚠️ **Note:** No frontend. API-only backend platform.
 
-# TransitOps Architecture
+# TransitOps — Layer 1: Master Data Layer
 
-# Layer 1 — Master Data Layer (Fleet Foundation)
+**Status: ✅ COMPLETE**
 
 ## Purpose
 
-The Master Data Layer is responsible for managing all core business entities that serve as the foundation of the transport management system.
-
-This layer only manages **master records**.
-
-It **does not** execute business workflows such as trip dispatching, maintenance, fuel logging, or analytics.
-
-Its primary responsibility is to ensure that all foundational business data is accurate, validated, and available for higher layers.
+Layer 1 manages all foundational business entities. These are the "lookup tables" that every other layer reads or references. No workflows run here — only data registration, validation, and retrieval.
 
 ---
 
-# Position in Architecture
+## Modules Built
 
-```
-Presentation Layer
-        │
-API Layer
-        │
-Business Layer
-        │
-────────────────────────────
-Layer 1 - Master Data
-────────────────────────────
-        │
-Layer 0 - Foundation
-        │
-PostgreSQL
-```
-
-Higher layers only read or update master records through this layer.
+| Module | Table | Key Fields |
+|---|---|---|
+| Regions | `regions` | name, description |
+| Vehicle Types | `vehicle_types` | name, max_default_capacity |
+| License Categories | `license_categories` | name, description |
+| Vehicles | `vehicles` | registration_number, status, odometer, acquisition_cost |
+| Drivers | `drivers` | license_number, license_expiry_date, safety_score, status |
+| Profiles | `profiles` | linked to users table |
 
 ---
 
-# Responsibilities
-
-- Vehicle Registration
-- Driver Registration
-- Vehicle Types
-- Regions
-- License Categories
-- User Profiles
-- CRUD Operations
-- Search
-- Filtering
-- Pagination
-- Soft Delete
-- Data Validation
-
-No workflows are executed here.
-
----
-
-# Domain Modules
+## Folder Structure
 
 ```
-Master Data
-
-│
-├── Vehicles
-├── Drivers
-├── Vehicle Types
-├── License Categories
-├── Regions
-├── Departments (Optional)
-└── User Profile
-```
-
----
-
-# Folder Structure
-
-```
-src/
-
-modules/
-
-├── vehicles/
-│   ├── vehicle.controller.js
-│   ├── vehicle.service.js
-│   ├── vehicle.repository.js
-│   ├── vehicle.validator.js
-│   ├── vehicle.routes.js
-│   └── vehicle.model.js
-│
-├── drivers/
-│
-├── vehicle-types/
-│
-├── license-categories/
+src/modules/
 │
 ├── regions/
+│   ├── region.routes.js        → GET/POST/PUT/DELETE /api/regions
+│   ├── region.controller.js    → uses shared catchAsync
+│   ├── region.service.js       → duplicate name check, CRUD
+│   ├── region.repository.js    → extends BaseRepository (8 lines)
+│   └── region.validator.js     → Zod schemas for body + params
 │
-└── profile/
-```
-
-Every module follows the same architecture.
-
-```
-Controller
-
-↓
-
-Service
-
-↓
-
-Repository
-
-↓
-
-Database
-```
-
----
-
-# Vehicle Module
-
-## Purpose
-
-Maintain vehicle master records.
-
-No trip assignment.
-
-No maintenance workflow.
-
-No fuel calculations.
-
----
-
-## Vehicle Attributes
-
-```
-Vehicle ID
-
-Registration Number
-
-Vehicle Name
-
-Vehicle Model
-
-Vehicle Type
-
-Maximum Capacity
-
-Current Odometer
-
-Acquisition Cost
-
-Purchase Date
-
-Status
-
-Region
-
-Description
+├── vehicle-types/
+│   ├── vehicle-type.routes.js
+│   ├── vehicle-type.controller.js
+│   ├── vehicle-type.service.js
+│   ├── vehicle-type.repository.js   → extends BaseRepository (10 lines)
+│   └── vehicle-type.validator.js
+│
+├── license-categories/
+│   ├── license-category.routes.js
+│   ├── license-category.controller.js
+│   ├── license-category.service.js
+│   ├── license-category.repository.js  → extends BaseRepository (8 lines)
+│   └── license-category.validator.js
+│
+├── vehicles/
+│   ├── vehicle.routes.js
+│   ├── vehicle.controller.js
+│   ├── vehicle.service.js       → registration duplicate check, capacity validation
+│   ├── vehicle.repository.js    → extends BaseRepository, overrides findById/findAll (JOINs)
+│   └── vehicle.validator.js
+│
+├── drivers/
+│   ├── driver.routes.js
+│   ├── driver.controller.js
+│   ├── driver.service.js        → license duplicate check
+│   ├── driver.repository.js     → extends BaseRepository, overrides findById/findAll (JOINs)
+│   └── driver.validator.js
+│
+└── profiles/
+    ├── profile.routes.js
+    ├── profile.controller.js
+    ├── profile.service.js
+    └── profile.repository.js
 ```
 
 ---
 
-## Validation Rules
+## Database Tables
 
-Registration Number
-
-- Required
-- Unique
-
-Maximum Capacity
-
-- Greater than 0
-
-Acquisition Cost
-
-- Greater than or equal to 0
-
-Odometer
-
-- Cannot be negative
-
-Vehicle Name
-
-- Required
-
-Vehicle Type
-
-- Must exist
-
----
-
-## CRUD Operations
-
+### `regions`
+```sql
+id, name, description, created_at, updated_at, is_deleted
 ```
-Create Vehicle
 
-Update Vehicle
+### `vehicle_types`
+```sql
+id, name, description, max_default_capacity, created_at, updated_at, is_deleted
+```
 
-View Vehicle
+### `license_categories`
+```sql
+id, name, description, created_at, updated_at, is_deleted
+```
 
-Search Vehicle
+### `vehicles`
+```sql
+id, registration_number [UNIQUE], name, model,
+vehicle_type_id → vehicle_types,
+region_id → regions,
+max_capacity, odometer, acquisition_cost, purchase_date,
+status ['Available'|'On Trip'|'In Shop'|'Retired'],
+description, created_at, updated_at, is_deleted
+```
 
-Delete Vehicle (Soft Delete)
-
-List Vehicles
+### `drivers`
+```sql
+id, full_name, license_number [UNIQUE],
+license_category_id → license_categories,
+license_expiry_date, phone, email,
+safety_score [0–100, default 100],
+status ['Available'|'On Trip'|'Off Duty'|'Suspended'],
+address, joining_date, created_at, updated_at, is_deleted
 ```
 
 ---
 
-## Status Values
+## Repository Pattern
 
-Although status is stored here,
-business rules cannot modify it.
+All Layer 1 repositories extend `BaseRepository` from `src/common/base.repository.js`.
 
-Allowed values
-
-```
-Available
-
-On Trip
-
-In Shop
-
-Retired
+**Simple repos (region, vehicle-type, license-category) — ~8 lines each:**
+```javascript
+class RegionRepository extends BaseRepository {
+  constructor() { super('regions'); }
+  findByName(name) { return this.findOneWhere('name = $1', [name]); }
+  create(name, description) { return this.insert(['name', 'description'], [name, description]); }
+}
+module.exports = new RegionRepository();
 ```
 
-Only Layer 2 and Layer 3 may change status.
-
-Layer 1 only stores it.
-
----
-
-# Driver Module
-
-## Purpose
-
-Maintain driver information.
-
----
-
-## Driver Attributes
-
-```
-Driver ID
-
-Full Name
-
-License Number
-
-License Category
-
-License Expiry Date
-
-Phone Number
-
-Email
-
-Safety Score
-
-Status
-
-Address
-
-Joining Date
+**Complex repos (vehicles, drivers) — override findById/findAll to include JOINs:**
+```javascript
+// vehicle.repository.js — findById JOINs vehicle_types + regions
+async findById(id) {
+  SELECT v.*, vt.name as vehicle_type_name, r.name as region_name
+  FROM vehicles v
+  LEFT JOIN vehicle_types vt ON v.vehicle_type_id = vt.id
+  LEFT JOIN regions r ON v.region_id = r.id
+  WHERE v.id = $1 AND v.is_deleted = false
+}
 ```
 
 ---
 
 ## Validation Rules
 
-License Number
+### Vehicle
+- `registration_number` — Required, unique
+- `max_capacity` — Required, > 0
+- `acquisition_cost` — ≥ 0
+- `odometer` — ≥ 0
+- `vehicle_type_id`, `region_id` — Must reference existing records
 
-- Required
-- Unique
-
-License Expiry
-
-- Required
-
-Phone
-
-- Valid format
-
-Email
-
-- Valid format
-
-License Category
-
-- Must exist
-
-Safety Score
-
-```
-0 - 100
-```
+### Driver
+- `license_number` — Required, unique
+- `license_expiry_date` — Required, valid date
+- `safety_score` — Integer 0–100
+- `license_category_id` — Must reference existing record
 
 ---
 
-## CRUD Operations
+## API Endpoints
 
-```
-Register Driver
+### Vehicles
+| Method | Endpoint | Roles | Description |
+|---|---|---|---|
+| GET | `/api/vehicles?status=Available&region_id=1&vehicle_type_id=2` | All | Filtered paginated list |
+| GET | `/api/vehicles/:id` | All | Get vehicle with JOINed type + region names |
+| POST | `/api/vehicles` | Admin, Fleet Manager | Register vehicle |
+| PUT | `/api/vehicles/:id` | Admin, Fleet Manager | Update vehicle fields |
+| DELETE | `/api/vehicles/:id` | Admin, Fleet Manager | Soft-delete |
 
-Update Driver
+### Drivers
+| Method | Endpoint | Roles | Description |
+|---|---|---|---|
+| GET | `/api/drivers?status=Available&license_category_id=1` | All | Filtered list |
+| GET | `/api/drivers/:id` | All | Get driver with license category |
+| POST | `/api/drivers` | Admin, Fleet Manager | Register driver |
+| PUT | `/api/drivers/:id` | Admin, Fleet Manager | Update |
+| DELETE | `/api/drivers/:id` | Admin | Soft-delete |
 
-Delete Driver
-
-Search Driver
-
-View Driver
-
-List Drivers
-```
-
----
-
-## Driver Status
-
-```
-Available
-
-On Trip
-
-Off Duty
-
-Suspended
-```
-
-Only higher layers modify status.
+### Regions / Vehicle Types / License Categories
+All follow the same pattern: `GET /`, `GET /:id`, `POST /`, `PUT /:id`, `DELETE /:id`
 
 ---
 
-# Vehicle Type Module
+## What This Layer Cannot Do
 
-Purpose
+- ❌ Assign a vehicle or driver to a trip
+- ❌ Change status to `On Trip` or `In Shop`
+- ❌ Log fuel or expenses
+- ❌ Create maintenance records
+- ❌ Calculate ROI or analytics
 
-Maintain available vehicle categories.
-
-Example
-
-```
-Truck
-
-Mini Truck
-
-Van
-
-Pickup
-
-Container
-
-Bike
-```
-
-Fields
-
-```
-ID
-
-Name
-
-Description
-
-Maximum Default Capacity
-```
+Status transitions are handled by Layers 2 and 3.
 
 ---
 
-# License Category Module
-
-Purpose
-
-Standardize driver licenses.
-
-Example
-
-```
-LMV
-
-HMV
-
-MCWG
-
-Transport
-
-Commercial
-```
-
----
-
-# Region Module
-
-Purpose
-
-Manage operational regions.
-
-Example
-
-```
-North
-
-South
-
-East
-
-West
-
-Central
-```
-
-Used for
-
-- Dashboard
-- Search
-- Dispatch
-- Reporting
-
----
-
-# User Profile Module
-
-Stores
-
-```
-Employee Name
-
-Role
-
-Phone
-
-Email
-
-Department
-
-Profile Photo
-```
-
-Authentication remains in Layer 0.
-
----
-
-# Repository Layer
-
-Repositories only perform database operations.
-
-```
-VehicleRepository
-
-DriverRepository
-
-VehicleTypeRepository
-
-LicenseRepository
-
-RegionRepository
-```
-
-No calculations.
-
-No workflows.
-
----
-
-# Service Layer
-
-Services contain simple business validations.
-
-Example
-
-VehicleService
-
-```
-Check Registration Duplicate
-
-↓
-
-Validate Capacity
-
-↓
-
-Save Vehicle
-```
-
-DriverService
-
-```
-Check License Duplicate
-
-↓
-
-Validate Expiry Date
-
-↓
-
-Save Driver
-```
-
----
-
-# API Endpoints
-
-## Vehicles
-
-```
-GET     /vehicles
-
-GET     /vehicles/:id
-
-POST    /vehicles
-
-PUT     /vehicles/:id
-
-DELETE  /vehicles/:id
-```
-
----
-
-## Drivers
-
-```
-GET     /drivers
-
-GET     /drivers/:id
-
-POST    /drivers
-
-PUT     /drivers/:id
-
-DELETE  /drivers/:id
-```
-
----
-
-## Vehicle Types
-
-```
-GET
-
-POST
-
-PUT
-
-DELETE
-```
-
----
-
-## Regions
-
-```
-GET
-
-POST
-
-PUT
-
-DELETE
-```
-
----
-
-# Database Tables
-
-```
-vehicles
-
-drivers
-
-vehicle_types
-
-license_categories
-
-regions
-
-profiles
-```
-
-Relationships
-
-```
-Vehicle
-
-↓
-
-Vehicle Type
-
-↓
-
-Region
-```
-
-```
-Driver
-
-↓
-
-License Category
-```
-
----
-
-# What This Layer Cannot Do
-
-❌ Assign Driver
-
-❌ Assign Vehicle
-
-❌ Dispatch Trip
-
-❌ Complete Trip
-
-❌ Fuel Entry
-
-❌ Maintenance Entry
-
-❌ Expense Calculation
-
-❌ Dashboard Calculation
-
-Those responsibilities belong to higher layers.
-
----
-
-# Data Flow
-
-```
-Admin
-
-↓
-
-Vehicle Form
-
-↓
-
-Vehicle Controller
-
-↓
-
-Vehicle Service
-
-↓
-
-Vehicle Validator
-
-↓
-
-Vehicle Repository
-
-↓
-
-PostgreSQL
-```
-
----
-
-# Dependencies
-
-Depends On
-
-- Layer 0 (Authentication, RBAC, Validation, Database)
-
-Used By
-
-- Layer 2 (Fleet State)
-- Layer 3 (Operations)
-- Layer 4 (Maintenance)
-- Layer 5 (Finance)
-- Layer 6 (Analytics)
-
----
-
-# Design Principles
-
-- Single Source of Truth
-- CRUD Only
-- No Workflow Logic
-- No Status Transition Logic
-- Reusable Master Data
-- Strong Validation
-- Modular Design
-
----
-
-# Deliverables
-
-Layer 1 is complete when
-
-- Vehicle CRUD implemented
-- Driver CRUD implemented
-- Vehicle Type CRUD implemented
-- License Category CRUD implemented
-- Region CRUD implemented
-- User Profile implemented
-- Search & Filtering working
-- Pagination implemented
-- Soft Delete implemented
-- Validation implemented
+## ✅ Completion Checklist
+
+- [x] Vehicle CRUD + JOINed responses
+- [x] Driver CRUD + JOINed responses
+- [x] Vehicle Type CRUD
+- [x] License Category CRUD
+- [x] Region CRUD
+- [x] User Profile CRUD
+- [x] Filtering (status, region_id, vehicle_type_id, license_category_id)
+- [x] Pagination (page + limit query params)
+- [x] Soft Delete (is_deleted flag)
+- [x] Zod validation on all endpoints
+- [x] Duplicate registration number / license number check

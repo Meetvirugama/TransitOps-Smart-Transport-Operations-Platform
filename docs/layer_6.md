@@ -1,715 +1,213 @@
-> ⚠️ **Note:** Do not implement frontend for this layer.
+> ⚠️ **Note:** No frontend. API-only backend platform.
 
-# TransitOps Architecture
+# TransitOps — Layer 6: Analytics & Reporting Layer
 
-# Layer 6 — Analytics & Reporting Layer
+**Status: ✅ COMPLETE**
 
 ## Purpose
 
-The Analytics & Reporting Layer is the presentation layer for operational intelligence.
-
-It consolidates data from all lower layers to provide real-time KPIs, dashboards, charts, reports, and business insights.
-
-This layer is **read-only**.
-
-It never creates, updates, or deletes business data.
+Layer 6 is the read-only intelligence layer. It aggregates data from all other layers to produce real-time KPIs, operational insights, license compliance alerts, and CSV data exports. No data is modified here — only read and aggregated.
 
 ---
 
-# Position in Architecture
+## Folder Structure
 
 ```
-Presentation Layer
-
-↓
-
-────────────────────────────
-Layer 6 - Analytics & Reporting
-────────────────────────────
-
-↓
-
-Layer 5 - Financial Management
-
-↓
-
-Layer 4 - Maintenance
-
-↓
-
-Layer 3 - Operations
-
-↓
-
-Layer 2 - Fleet Availability
-
-↓
-
-Layer 1 - Master Data
-
-↓
-
-Layer 0 - Foundation
-```
-
----
-
-# Responsibilities
-
-- Dashboard
-- KPIs
-- Charts
-- Reports
-- Fleet Utilization
-- Fuel Efficiency
-- Operational Cost Analysis
-- ROI Analysis
-- Vehicle Performance
-- Driver Performance
-- CSV Export
-- PDF Export (Optional)
-
-No business logic.
-
-No workflow execution.
-
----
-
-# Core Modules
-
-```
-Analytics
-
-│
-├── Dashboard
-├── KPI Engine
-├── Charts
-├── Reports
-├── Export Engine
-└── Insights
-```
-
----
-
-# Dashboard
-
-Purpose
-
-Provide a real-time overview of transport operations.
-
----
-
-## Dashboard Cards
-
-```
-Active Vehicles
-
-Available Vehicles
-
-Vehicles In Maintenance
-
-Active Trips
-
-Pending Trips
-
-Completed Trips
-
-Available Drivers
-
-Drivers On Trip
-
-Fleet Utilization
-
-Total Operational Cost
-
-Fuel Efficiency
-
-Vehicle ROI
-```
-
----
-
-# KPI Engine
-
-Purpose
-
-Calculate operational metrics.
-
----
-
-## Fleet KPIs
-
-```
-Fleet Utilization %
-
-Vehicle Availability %
-
-Maintenance Rate
-
-Trip Completion Rate
-```
-
----
-
-## Financial KPIs
-
-```
-Total Fuel Cost
-
-Total Maintenance Cost
-
-Total Expenses
-
-Revenue
-
-Profit
-
-Vehicle ROI
-```
-
----
-
-## Driver KPIs
-
-```
-Trips Completed
-
-Safety Score
-
-License Expiry
-
-Average Distance
-```
-
----
-
-# Fleet Utilization
-
-Formula
-
-```
-Fleet Utilization
-
-=
-
-Vehicles On Trip
-
-------------------------
-
-Total Active Vehicles
-
-×
-
-100
-```
-
----
-
-# Fuel Efficiency
-
-Formula
-
-```
-Distance
-
-/
-
-Fuel Consumed
-```
-
-Example
-
-```
-800 KM
-
-/
-
-50 L
-
-=
-
-16 KM/L
-```
-
----
-
-# Vehicle ROI
-
-Formula
-
-```
-Revenue
-
--
-
-(Fuel
-
-+
-
-Maintenance
-
-+
-
-Expenses)
-
-------------------------
-
-Acquisition Cost
-```
-
----
-
-# Charts
-
-Purpose
-
-Visualize operational data.
-
----
-
-## Supported Charts
-
-```
-Line Chart
-
-Bar Chart
-
-Pie Chart
-
-Area Chart
-
-Doughnut Chart
-```
-
----
-
-## Dashboard Charts
-
-```
-Trips Per Day
-
-Fuel Cost Trend
-
-Maintenance Cost Trend
-
-Revenue Trend
-
-Vehicle Utilization
-
-Expense Breakdown
-
-Driver Performance
-
-Vehicle Status Distribution
-```
-
----
-
-# Reports
-
-Purpose
-
-Generate printable business reports.
-
----
-
-## Available Reports
-
-```
-Vehicle Report
-
-Driver Report
-
-Trip Report
-
-Maintenance Report
-
-Fuel Report
-
-Expense Report
-
-Financial Summary
-
-Fleet Summary
-```
-
----
-
-# Filters
-
-All reports support
-
-```
-Date Range
-
-Vehicle
-
-Driver
-
-Region
-
-Trip Status
-
-Vehicle Type
-```
-
----
-
-# Export Engine
-
-Purpose
-
-Export report data.
-
-Supported formats
-
-```
-CSV
-
-PDF (Optional)
-```
-
----
-
-# Insights Engine
-
-Purpose
-
-Generate quick business insights.
-
-Examples
-
-```
-Most Used Vehicle
-
-Highest Fuel Cost Vehicle
-
-Lowest Fuel Efficiency
-
-Most Active Driver
-
-Vehicle With Highest ROI
-
-Vehicle With Highest Maintenance Cost
-```
-
----
-
-# Folder Structure
-
-```
-src/
-
-analytics/
-
-├── dashboard/
-│   ├── dashboard.controller.js
-│   ├── dashboard.service.js
-│   ├── dashboard.routes.js
+src/modules/analytics/
 │
 ├── kpi/
-│   ├── kpi.engine.js
+│   └── kpi.engine.js           ← Core query engine for all metrics
 │
-├── charts/
+├── dashboard/
+│   ├── dashboard.routes.js     → /api/analytics/* endpoints
+│   ├── dashboard.controller.js → Request handlers (filters from query params)
+│   └── dashboard.service.js    → Orchestrates kpiEngine calls
 │
-├── reports/
-│
-├── exports/
-│   ├── csv.export.js
-│   └── pdf.export.js
-│
-└── insights/
+└── exports/
+    ├── reports.routes.js       → /api/reports/* CSV export endpoints
+    ├── reports.controller.js   → Streams CSV to response
+    └── csv.export.js           ← CSV engine (no dependencies, pure string building)
 ```
 
 ---
 
-# API Endpoints
+## KPI Engine (`kpi.engine.js`)
 
-Dashboard
+Uses `Promise.all()` to run all queries in parallel for maximum performance.
 
-```
-GET /dashboard
-```
+### Functions Exported
 
-KPIs
-
-```
-GET /dashboard/kpis
-```
-
-Charts
-
-```
-GET /dashboard/charts
+```javascript
+getVehicleCounts(filters)       // Total, available, onTrip, inShop, retired
+getTripCounts(filters)          // Total, draft, active, completed, cancelled
+getDriverCounts()               // Total, available, onTrip, suspended, offDuty
+getFinancialMetrics()           // Revenue, costs (fuel/maintenance/expenses), profit
+getExpiringLicenses(daysAhead)  // Drivers with license_expiry_date ≤ NOW + N days
+getExpiredLicenses()            // Drivers with license already expired
+getInsights()                   // Top 5 most active drivers/vehicles, highest fuel cost
 ```
 
-Reports
+### Filter Support
 
-```
-GET /reports/vehicles
-
-GET /reports/drivers
-
-GET /reports/trips
-
-GET /reports/maintenance
-
-GET /reports/finance
-```
-
-Exports
-
-```
-GET /reports/export/csv
-
-GET /reports/export/pdf
+`getVehicleCounts` and `getTripCounts` accept optional filters:
+```javascript
+filters = { region_id: '1', vehicle_type_id: '2' }
+// → appended as WHERE conditions dynamically
 ```
 
 ---
 
-# Data Sources
+## Dashboard Service (`dashboard.service.js`)
 
-Analytics does not own any data.
+Calls all KPI functions in parallel:
 
-It reads from
-
-```
-Layer 1
-
-Vehicles
-
-Drivers
-```
-
-```
-Layer 3
-
-Trips
-```
-
-```
-Layer 4
-
-Maintenance
-```
-
-```
-Layer 5
-
-Fuel
-
-Expenses
-
-Revenue
+```javascript
+const getDashboardSummary = async (filters = {}) => {
+  const [vehicles, trips, drivers, financials] = await Promise.all([
+    kpiEngine.getVehicleCounts(filters),
+    kpiEngine.getTripCounts(filters),
+    kpiEngine.getDriverCounts(),
+    kpiEngine.getFinancialMetrics()
+  ]);
+  // ... computes KPI ratios
+};
 ```
 
 ---
 
-# Dashboard Flow
+## CSV Export Engine (`csv.export.js`)
 
+Zero external dependencies — builds CSV strings manually:
+
+```javascript
+const objectsToCSV = (rows) => {
+  const headers = Object.keys(rows[0]);
+  const lines = [headers.join(',')];
+  for (const row of rows) {
+    const values = headers.map(h => {
+      const val = String(row[h] ?? '');
+      return val.includes(',') ? `"${val.replace(/"/g, '""')}"` : val;
+    });
+    lines.push(values.join(','));
+  }
+  return lines.join('\n');
+};
 ```
-Dashboard Request
 
-↓
-
-Dashboard Controller
-
-↓
-
-Dashboard Service
-
-↓
-
-KPI Engine
-
-↓
-
-Repositories
-
-↓
-
-Aggregate Data
-
-↓
-
-Response
+Sends with correct headers:
+```
+Content-Type: text/csv
+Content-Disposition: attachment; filename="trips_export.csv"
 ```
 
 ---
 
-# Business Rules
+## API Endpoints
 
-## Rule 1
+### Dashboard
+| Method | Endpoint | Roles | Query Params | Description |
+|---|---|---|---|---|
+| GET | `/api/analytics/dashboard` | Admin, Fleet Manager, Safety Officer | `?region_id=1&vehicle_type_id=2` | Real-time fleet + financial KPIs |
+| GET | `/api/analytics/expiring-licenses` | Admin, Fleet Manager, Safety Officer | `?days=30` | Expiring soon + already expired |
+| GET | `/api/analytics/insights` | Admin, Fleet Manager, Safety Officer | — | Top performers |
 
-Dashboard
+### CSV Exports
+| Method | Endpoint | Roles | Query Params | Downloads |
+|---|---|---|---|---|
+| GET | `/api/reports/trips/export` | Admin, Fleet Manager, Financial Analyst | `?status=Completed&from_date=2024-01-01&to_date=2024-12-31` | `trips_export.csv` |
+| GET | `/api/reports/vehicles/export` | Admin, Fleet Manager, Financial Analyst | `?status=Available&region_id=1&vehicle_type_id=2` | `vehicles_export.csv` |
+| GET | `/api/reports/fuel/export` | Admin, Fleet Manager, Financial Analyst | `?vehicle_id=1&from_date=2024-01-01` | `fuel_logs_export.csv` |
 
+---
+
+## Sample API Responses
+
+### `GET /api/analytics/dashboard`
+```json
+{
+  "vehicles": { "total": 25, "available": 18, "onTrip": 5, "inShop": 2, "retired": 0 },
+  "trips": { "total": 340, "draft": 3, "active": 5, "completed": 320, "cancelled": 12 },
+  "drivers": { "total": 30, "available": 22, "onTrip": 5, "suspended": 1, "offDuty": 2 },
+  "financials": {
+    "revenue": 150000, "totalCost": 95000,
+    "fuelCost": 60000, "maintenanceCost": 25000, "otherExpenses": 10000,
+    "profit": 55000
+  },
+  "kpis": {
+    "fleetUtilizationPercentage": 20.0,
+    "vehicleAvailabilityPercentage": 72.0,
+    "tripCompletionRate": 94.1
+  }
+}
 ```
-Read Only
+
+### `GET /api/analytics/expiring-licenses?days=30`
+```json
+{
+  "expiringSoon": [
+    { "id": 5, "full_name": "Alex Kumar", "license_expiry_date": "2024-08-01", "phone": "9876543210" }
+  ],
+  "alreadyExpired": [
+    { "id": 12, "full_name": "Ravi Sharma", "license_expiry_date": "2024-06-15" }
+  ]
+}
+```
+
+### `GET /api/analytics/insights`
+```json
+{
+  "mostActiveDrivers": [
+    { "id": 3, "full_name": "Rohit Singh", "trip_count": "47" }
+  ],
+  "mostUsedVehicles": [
+    { "id": 7, "registration_number": "MH12AB1234", "trip_count": "62" }
+  ],
+  "highestFuelCostVehicles": [
+    { "id": 7, "registration_number": "MH12AB1234", "total_fuel_cost": "18400.50" }
+  ]
+}
 ```
 
 ---
 
-## Rule 2
+## KPI Calculations
 
-Reports
-
-```
-Never Modify Data
-```
-
----
-
-## Rule 3
-
-Analytics
-
-```
-Always Use Latest Data
-```
+| KPI | Formula |
+|---|---|
+| Fleet Utilization % | `(onTrip / total vehicles) × 100` |
+| Vehicle Availability % | `(available / total vehicles) × 100` |
+| Trip Completion Rate | `(completed / total trips) × 100` |
+| Net Profit | `Revenue - (Fuel + Maintenance + Expenses)` |
 
 ---
 
-## Rule 4
+## Data Sources (Read-Only)
 
-Export
-
-```
-Uses Filtered Data
-```
-
----
-
-# Performance Strategy
-
-To keep dashboard fast
-
-```
-Parallel Queries
-
-↓
-
-Aggregate Results
-
-↓
-
-Return Single Response
-```
-
-Future optimization
-
-```
-Redis Cache
-
-Materialized Views
-
-Background Scheduler
-```
-
-(Not required for the hackathon.)
+| Query | Tables read |
+|---|---|
+| Vehicle counts | `vehicles` |
+| Trip counts | `trips` |
+| Driver counts | `drivers` |
+| Financial metrics | `revenues`, `fuel_logs`, `expenses`, `maintenance_records` |
+| Expiring licenses | `drivers` |
+| Insights | `drivers` + `trips` + `vehicles` + `fuel_logs` |
+| CSV exports | `trips` + `vehicles` + `drivers` + `fuel_logs` + `vehicle_types` + `regions` |
 
 ---
 
-# Dependencies
+## ✅ Completion Checklist
 
-Uses
-
-```
-Layer 0
-
-Authentication
-
-RBAC
-```
-
-Uses
-
-```
-Layer 1
-
-Master Data
-```
-
-Uses
-
-```
-Layer 3
-
-Trip Data
-```
-
-Uses
-
-```
-Layer 4
-
-Maintenance Data
-```
-
-Uses
-
-```
-Layer 5
-
-Financial Data
-```
-
-Provides
-
-```
-Dashboard
-
-Reports
-
-Charts
-
-Business Insights
-```
-
----
-
-# What This Layer Cannot Do
-
-❌ Create Vehicle
-
-❌ Register Driver
-
-❌ Dispatch Trip
-
-❌ Complete Trip
-
-❌ Create Maintenance
-
-❌ Record Fuel
-
-❌ Record Expense
-
-❌ Change Vehicle Status
-
-Analytics is completely read-only.
-
----
-
-# Design Principles
-
-- Read-Only Layer
-- Real-Time Metrics
-- High Performance
-- Modular Report Generation
-- Reusable KPI Engine
-- Export Friendly
-- Business Intelligence Focus
-
----
-
-# Deliverables
-
-Layer 6 is complete when
-
-- Dashboard implemented
-- KPI engine implemented
-- Charts implemented
-- Reports implemented
-- CSV export implemented
-- PDF export (optional) implemented
-- Filters implemented
-- Business insights implemented
+- [x] Dashboard KPIs (fleet, trips, drivers, financials)
+- [x] Real-time parallel queries (Promise.all)
+- [x] Dashboard filtering by `region_id` and `vehicle_type_id`
+- [x] Trip completion rate KPI
+- [x] Expiring licenses endpoint (`?days=N`, defaults to 30)
+- [x] Already-expired licenses in same response
+- [x] Top 5 most active drivers (by completed trips)
+- [x] Top 5 most used vehicles (by completed trips)
+- [x] Top 5 highest fuel cost vehicles
+- [x] CSV export: trips (with filters)
+- [x] CSV export: vehicles (with filters)
+- [x] CSV export: fuel logs (with filters)
+- [x] Safety Officer access to license alerts
+- [x] Financial Analyst access to CSV exports

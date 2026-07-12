@@ -10,7 +10,7 @@ export default function Drivers() {
   const [categoriesList, setCategoriesList] = useState([]);
   const { user } = useAuth();
   
-  const canModify = user?.role === 'Admin' || user?.role === 'Fleet Manager' || user?.role === 'Safety Officer';
+  const canModify = user?.role === 'Admin' || (user?.permissions?.can_manage_drivers);
 
   const fetchDrivers = async () => {
     try {

@@ -11,7 +11,7 @@ export default function Maintenance() {
   const [searchQuery, setSearchQuery] = useState('');
   
   const { user } = useAuth();
-  const canModify = user?.role === 'Admin' || user?.role === 'Fleet Manager';
+  const canModify = user?.role === 'Admin' || (user?.permissions?.can_manage_maintenance);
 
   // Modal States
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);

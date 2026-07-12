@@ -2,7 +2,7 @@ const dbPool = require('../config/database');
 
 const getUserByEmail = async (email) => {
   const query = `
-    SELECT u.id, u.email, u.password_hash, r.name as role
+    SELECT u.id, u.email, u.password_hash, r.name as role, r.permissions
     FROM users u
     JOIN user_roles ur ON u.id = ur.user_id
     JOIN roles r ON ur.role_id = r.id

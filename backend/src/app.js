@@ -25,6 +25,8 @@ const revenueRoutes = require('./modules/finance/revenue/revenue.routes');
 const financeRoutes = require('./modules/finance/calculator/finance.routes');
 const analyticsRoutes = require('./modules/analytics/dashboard/dashboard.routes');
 const reportsRoutes = require('./modules/analytics/exports/reports.routes');
+const rolesRoutes = require('./modules/roles/roles.routes');
+const usersRoutes = require('./modules/users/users.routes');
 
 const app = express();
 
@@ -65,6 +67,8 @@ app.use('/api/revenues', revenueRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/settings/roles', rolesRoutes);
+app.use('/api/settings/users', usersRoutes);
 
 // Health Check
 app.get('/health', async (req, res) => {

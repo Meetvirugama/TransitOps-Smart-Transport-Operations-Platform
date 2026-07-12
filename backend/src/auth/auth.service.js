@@ -17,10 +17,10 @@ const login = async (email, password) => {
     throw new UnauthorizedError('Invalid email or password');
   }
 
-  const token = generateToken({ id: user.id, email: user.email, role: user.role });
+  const token = generateToken({ id: user.id, email: user.email, role: user.role, permissions: user.permissions });
   
   return {
-    user: { id: user.id, email: user.email, role: user.role },
+    user: { id: user.id, email: user.email, role: user.role, permissions: user.permissions },
     token
   };
 };

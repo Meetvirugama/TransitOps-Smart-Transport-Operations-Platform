@@ -36,7 +36,7 @@ export default function Trips() {
   const [odoError, setOdoError] = useState('');
   
   const { user } = useAuth();
-  const canModify = user?.role === 'Admin' || user?.role === 'Fleet Manager' || user?.role === 'Dispatcher';
+  const canModify = user?.role === 'Admin' || (user?.permissions?.can_manage_trips);
 
   // Fetch Data
   const fetchData = async () => {

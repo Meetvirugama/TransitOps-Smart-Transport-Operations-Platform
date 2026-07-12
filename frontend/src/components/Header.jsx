@@ -2,15 +2,14 @@ import React, { useRef, useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const menuItems = [
-  { path: '/dashboard',     label: 'Dashboard'      },
-  { path: '/fleet',         label: 'Fleet'           },
-  { path: '/drivers',       label: 'Drivers'         },
-  { path: '/trips',         label: 'Trips'           },
-  { path: '/maintenance',   label: 'Maintenance'     },
-  { path: '/fuel-expenses', label: 'Fuel & Expenses' },
-  { path: '/analytics',     label: 'Analytics'       },
-  // Settings removed from nav — accessed via username dropdown
+const getAllMenuItems = () => [
+  { path: '/dashboard',     label: 'Dashboard',      permission: 'can_view_dashboard' },
+  { path: '/fleet',         label: 'Fleet',          permission: 'can_view_fleet' },
+  { path: '/drivers',       label: 'Drivers',        permission: 'can_view_drivers' },
+  { path: '/trips',         label: 'Trips',          permission: 'can_view_trips' },
+  { path: '/maintenance',   label: 'Maintenance',    permission: 'can_view_maintenance' },
+  { path: '/fuel-expenses', label: 'Fuel & Expenses',permission: 'can_view_finance' },
+  { path: '/analytics',     label: 'Analytics',      permission: 'can_view_analytics' }
 ];
 
 export default function Header() {
@@ -59,9 +58,13 @@ export default function Header() {
   };
 
   const displayName = user?.name || user?.email?.split('@')[0] || 'User';
-  const displayRole = user?.role || 'Dispatcher';
+  const displayRole = user?.role || 'User';
   const displayEmail = user?.email || '';
   const initials    = getInitials(displayName);
+  const permissions = user?.permissions || {};
+  const isAdmin     = displayRole === 'Admin';
+
+  const menuItems = getAllMenuItems().filter(item => isAdmin || permissions[item.permission]);
 
   return (
     <header className="h-16 border-b border-[#1e2d38] flex items-center justify-between px-6 shrink-0 select-none bg-[#0a0f14] w-full z-50 relative">
@@ -166,20 +169,22 @@ export default function Header() {
               </div>
 
               {/* Menu Items */}
-              <div className="py-2 px-2 flex flex-col gap-0.5">
-                <button
-                  onClick={() => { setDropdownOpen(false); navigate('/settings'); }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#c5cace] hover:bg-[#162129] hover:text-white transition-all duration-150 cursor-pointer text-left"
-                >
-                  <span className="w-5 h-5 flex items-center justify-center text-[#4ff7d1]">
-                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </span>
-                  <span className="font-medium">Settings</span>
-                </button>
-              </div>
+              {(isAdmin || permissions.can_manage_settings) && (
+                <div className="py-2 px-2 flex flex-col gap-0.5">
+                  <button
+                    onClick={() => { setDropdownOpen(false); navigate('/settings'); }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#c5cace] hover:bg-[#162129] hover:text-white transition-all duration-150 cursor-pointer text-left"
+                  >
+                    <span className="w-5 h-5 flex items-center justify-center text-[#4ff7d1]">
+                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </span>
+                    <span className="font-medium">Settings</span>
+                  </button>
+                </div>
+              )}
 
               {/* Divider + Sign Out */}
               <div className="px-2 pb-2 border-t border-[#1e2d38] pt-2">

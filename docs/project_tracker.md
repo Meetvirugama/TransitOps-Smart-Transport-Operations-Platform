@@ -160,7 +160,7 @@
 - [x] Fuel Logs tab — Add Fuel Log modal (vehicle, station, quantity, price, odometer)
 - [x] Expenses tab — Table with date, vehicle, type, description, amount
 - [x] Expenses tab — Add Expense modal (vehicle, type, amount, description)
-- [x] Delete fuel log / expense (with confirmation)
+- [x] **Phase 5: User & App Settings** (Settings, Roles, Notifications)
 - [x] Search by vehicle, filter by date
 - [x] RBAC: Admin, Fleet Manager, Dispatcher can add; Safety Officer/Finance Analyst view only
 

@@ -12,7 +12,7 @@ export default function FuelExpenses() {
   const [searchQuery, setSearchQuery] = useState('');
   
   const { user } = useAuth();
-  const canModify = user?.role === 'Admin' || user?.role === 'Fleet Manager' || user?.role === 'Dispatcher';
+  const canModify = user?.role === 'Admin' || (user?.permissions?.can_manage_finance);
 
   // Modals
   const [isFuelModalOpen, setIsFuelModalOpen] = useState(false);
@@ -34,7 +34,7 @@ export default function FuelExpenses() {
   const fetchData = async () => {
     try {
       const [fuelRes, expRes, vehRes] = await Promise.all([
-        api.get('/fuel-logs', { params: { limit: 100 } }).catch(() => ({ data: [] })),
+        api.get('/fuel', { params: { limit: 100 } }).catch(() => ({ data: [] })),
         api.get('/expenses', { params: { limit: 100 } }).catch(() => ({ data: [] })),
         api.get('/vehicles', { params: { limit: 100 } }).catch(() => ({ data: [] }))
       ]);
@@ -70,7 +70,7 @@ export default function FuelExpenses() {
   const handleFuelSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/fuel-logs', {
+      await api.post('/fuel', {
         vehicle_id: parseInt(fVehId, 10),
         quantity: parseFloat(fQty),
         price_per_liter: parseFloat(fPrice),
@@ -104,7 +104,7 @@ export default function FuelExpenses() {
 
   const handleDeleteFuel = async (id) => {
     if (!window.confirm("Delete fuel log?")) return;
-    await api.delete(`/fuel-logs/${id}`).catch(err => alert(err.message));
+    await api.delete(`/fuel/${id}`).catch(err => alert(err.message));
     fetchData();
   };
 

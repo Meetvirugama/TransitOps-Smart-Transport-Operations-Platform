@@ -11,7 +11,7 @@ export default function Fleet() {
   const [vehicleTypesList, setVehicleTypesList] = useState([]);
   const { user } = useAuth();
   
-  const canModify = user?.role === 'Admin' || user?.role === 'Fleet Manager';
+  const canModify = user?.role === 'Admin' || (user?.permissions?.can_manage_fleet);
 
   const fetchVehicles = async () => {
     try {
